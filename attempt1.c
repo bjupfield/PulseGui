@@ -194,6 +194,32 @@ void setup(pa_mainloop** loop, pa_context** context)
     pa_context_set_state_callback(*context, context_state_callback, *loop);
     return;
 }
+void printSinkInputData(pa_sink_input_info* sink)
+{
+    printf("Sink Input Name: %s\n", sink->name);
+    if(sink->has_volume)
+    {
+        for(int i = 0; i < sink->volume.channels; i++)
+        {
+            printf("Channel[] Volume: %i\n", sink->volume.values[i]);
+        }
+    }
+    printf("Sink Driver: %s \n", sink->driver);
+    printf("Sink SampleMethod: %s \n", sink->resample_method);
+    printf("'Corked Value': %i \n", sink->corked);
+    printf("Client Idx: %i \n", sink->client);
+    printf("Sink Idx: %i \n", sink->sink);
+    printf("Owner Module Idx: %i \n", sink->owner_module);
+    printf("Sample Rate: %i\n", sink->sample_spec.rate);
+    printf("Sample Channels: %i\n", sink->sample_spec.channels);
+    printf("Audio Clarity: %i\n", sink->sample_spec.format);
+    for(int i = 0; i < sink->channel_map.channels; i++)
+    {
+        printf("Channel Position[%i]: %i\n", i, sink->channel_map.map[i]);
+    }
+
+
+}
 void mainloopRUN()
 {
 }
@@ -301,6 +327,8 @@ int main(void*)
         pa_mainloop_iterate(loop, 1, 0);
     }
 
+    printSinkInputData(&clientsInputSink);
+
     pa_context_move_sink_input_by_name(context, clientsInputSink.index, "PulseGUI_Sink", unloadModuleCallback, loop);
     while(done)
     {
@@ -313,6 +341,10 @@ int main(void*)
     {
         pa_mainloop_iterate(loop, 1, 0);
     }
+
+    sleep(10);
+
+    printSinkInputData(&clientsInputSink);
 
     done = 1;
     pa_context_move_sink_input_by_index(context, clientsInputSink.index, clientsSink.index, unloadModuleCallback, loop);
