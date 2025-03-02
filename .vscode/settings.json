@@ -4,6 +4,7 @@
         "charconv": "cpp",
         "compare": "cpp",
         "format": "cpp",
-        "iomanip": "cpp"
+        "iomanip": "cpp",
+        "*.rh": "c"
     }
 }
