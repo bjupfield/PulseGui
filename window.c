@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <unistd.h> //this is for sleep remove plz
 
+#include "GLInterface.h"
+
 /*
 * Event Handling Functions
 */
@@ -49,6 +51,11 @@ int main(int argc, char **argv)
     //sleep(6);
 
     XEvent event;
+
+    if(queryServer(display))
+    {
+        printf("Has X Server || Available Configs: %i\n", printConfigs(display));
+    }
 
     while(plzDestroy)
     {

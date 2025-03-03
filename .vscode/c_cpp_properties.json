@@ -4,7 +4,10 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/pulseaudio/src/pulse"
+                "${workspaceFolder}/pulseaudio/src/pulse",
+                "/usr/include",
+                "/usr/include/GL",
+                "/usr/lib64",
             ],
             "defines": [],
             "compilerPath": "/usr/lib/llvm/18/bin/clang",
