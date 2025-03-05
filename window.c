@@ -13,6 +13,8 @@ int handleEvent(XEvent* event, Display* display, Window* window);
 
 int notifyChangeHandle(XConfigureEvent event, Window* window, Display* display);
 
+int errorHandler(Display* display, XErrorEvent* ErrorEvent);
+
 
 
 
@@ -22,6 +24,18 @@ int main(int argc, char **argv)
 {
     Display* display = XOpenDisplay(NULL);
 
+
+    //we will set an errorhandler down the line, but I don't really want to mess with it now
+    //XSetErrorHandler(errorHandler);
+
+    XVisualInfo *info = NULL;
+    if(queryServer(display))
+    {
+        printf("Has X Server || Has a Config: %i\n", retrieveConfig(display));
+        info = retrieveVisual(display);
+    }
+
+
     XSetWindowAttributes wa = {
 		.override_redirect = False,
   		//.background_pixmap = ParentRelative,
@@ -30,15 +44,17 @@ int main(int argc, char **argv)
             EnterWindowMask|LeaveWindowMask|ExposureMask|PointerMotionMask|
             VisibilityChangeMask|StructureNotifyMask,
 		.background_pixel = BlackPixel(display, 0),
-        .colormap = DefaultColormap(display, 0),
+        .colormap = XCreateColormap(display, RootWindow(display, 0), info->visual, AllocNone),
 	};
 
     Window w = XCreateWindow(
         display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
-        DefaultDepth(display, 0), CopyFromParent, DefaultVisual(display, 0), 
+        info->depth, CopyFromParent, info->visual, 
 		CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa);
 
+    XFree(info);
 
+    initializeWindow(display, w);
 
     XMapWindow(display, w);
 
@@ -52,10 +68,7 @@ int main(int argc, char **argv)
 
     XEvent event;
 
-    if(queryServer(display))
-    {
-        printf("Has X Server || Available Configs: %i\n", printConfigs(display));
-    }
+    printf("Buffer Amount: %i\n", currenting(display));
 
     while(plzDestroy)
     {
@@ -69,6 +82,7 @@ int main(int argc, char **argv)
 
     sleep(4);
 
+    destroyGLX(display);
 
     XCloseDisplay(display);
 
@@ -110,5 +124,20 @@ int notifyChangeHandle(XConfigureEvent event, Window* window, Display* display)
     printf("Old Window X: %i || Y: %i", attri.width, attri.height);
     //this displays that old windows get updated by the notifychanges :)
 
+    return 0;
+}
+
+/*
+* This is actually a crazy function, I don't really know how to interact with it yet, only because I don't
+* Really want a centralized state machine, which is what this function requires. I'll see what I want eventually
+* but just look up XSetErrorHandler, xorg gives a detailed description 
+* 
+*/
+int errorHandler(Display* display, XErrorEvent* ErrorEvent)
+{
+    // printf(
+    //     "X Errror of Failed Request:  %s\n  Major Opcode of Failed Request:  %s\n  Serial Number of Failed Request: %i\n  Current Serial Number in Output Stream:  %i",
+    //     ErrorEvent->request_code, ErrorEvent->error_code, ErrorEvent->resourceid, ErrorEvent->serial
+    //     );
     return 0;
 }

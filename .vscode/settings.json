@@ -5,6 +5,7 @@
         "compare": "cpp",
         "format": "cpp",
         "iomanip": "cpp",
-        "*.rh": "c"
+        "*.rh": "c",
+        "glinterface.h": "c"
     }
 }
