@@ -24,17 +24,22 @@ int main(int argc, char **argv)
 {
     Display* display = XOpenDisplay(NULL);
 
+    printf("hi");
+    printf("hello");
 
     //we will set an errorhandler down the line, but I don't really want to mess with it now
-    //XSetErrorHandler(errorHandler);
+    XSetErrorHandler(errorHandler);
 
     XVisualInfo *info = NULL;
     if(queryServer(display))
     {
         printf("Has X Server || Has a Config: %i\n", retrieveConfig(display));
+    printf("Howdy!");
+
         info = retrieveVisual(display);
     }
 
+    printf("Howdy!");
 
     XSetWindowAttributes wa = {
 		.override_redirect = False,
@@ -46,6 +51,7 @@ int main(int argc, char **argv)
 		.background_pixel = BlackPixel(display, 0),
         .colormap = XCreateColormap(display, RootWindow(display, 0), info->visual, AllocNone),
 	};
+    printf("Howdy!");
 
     Window w = XCreateWindow(
         display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
@@ -56,35 +62,37 @@ int main(int argc, char **argv)
 
     initializeWindow(display, w);
 
-    XMapWindow(display, w);
+    // XMapWindow(display, w);
 
-    XFlush(display);
-    /*
-    * not really needed as XPending(), XNextEvent, and XWindowEvent(), all flush the display
-    * buffer to the xserver,
-    * same with XSync(display, 0), which flushes both the xservers and the displays buffers
-    */
-    //sleep(6);
+    // XFlush(display);
+    // /*
+    // * not really needed as XPending(), XNextEvent, and XWindowEvent(), all flush the display
+    // * buffer to the xserver,
+    // * same with XSync(display, 0), which flushes both the xservers and the displays buffers
+    // */
+    // //sleep(6);
 
-    XEvent event;
+    // XEvent event;
 
-    printf("Buffer Amount: %i\n", currenting(display));
+    // printf("Howdy!");
+    // createAttachProgram();
+    // //printf("Buffer Amount: %i\n", currenting(display));
 
-    while(plzDestroy)
-    {
-        XNextEvent(display, &event);
-        handleEvent(&event, display, &w);
-    }
+    // while(plzDestroy)
+    // {
+    //     XNextEvent(display, &event);
+    //     handleEvent(&event, display, &w);
+    // }
 
 
-    XDestroyWindow(display, w);
-    XFlush(display);
+    // XDestroyWindow(display, w);
+    // XFlush(display);
 
-    sleep(4);
+    // sleep(4);
 
-    destroyGLX(display);
+    // destroyGLX(display);
 
-    XCloseDisplay(display);
+    // XCloseDisplay(display);
 
     return 0;
 

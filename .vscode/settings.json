@@ -6,6 +6,11 @@
         "format": "cpp",
         "iomanip": "cpp",
         "*.rh": "c",
-        "glinterface.h": "c"
+        "glinterface.h": "c",
+        "glbindings.h": "c",
+        "chrono": "c",
+        "typeindex": "c",
+        "typeinfo": "c",
+        "functional": "c"
     }
 }

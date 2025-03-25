@@ -3,6 +3,10 @@
 
 #include <GL/glx.h>
 #include <X11/Xlib.h>
+#include <GL/gl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "GLBindings.h"
 
 
 /*
@@ -19,5 +23,7 @@ int initializeWindow(Display* display, Window window);
 int currenting(Display* display);
 
 int destroyGLX(Display* display);
+
+int createAttachProgram();
 
 #endif
