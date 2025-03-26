@@ -15,7 +15,7 @@ int notifyChangeHandle(XConfigureEvent event, Window* window, Display* display);
 
 int errorHandler(Display* display, XErrorEvent* ErrorEvent);
 
-
+XWindowAttributes attri;
 
 
 int plzDestroy = 1;
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
     XEvent event;
 
-    createAttachProgram(display);
+    createAttachProgram(display, attri);
     //printf("Buffer Amount: %i\n", currenting(display));
 
     while(plzDestroy)
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
     XDestroyWindow(display, w);
     XFlush(display);
 
-    sleep(4);
+    //sleep(4);
 
     destroyGLX(display);
 
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 }
 int handleEvent(XEvent* event, Display* display, Window* window)
 {
-    printf("EventType: %i\n", event->type);
+    //printf("EventType: %i\n", event->type);
     if(event->type == KeyPress)
     {
         XKeyEvent* myKeys = &event->xkey;
@@ -119,10 +119,19 @@ int handleEvent(XEvent* event, Display* display, Window* window)
 }
 int notifyChangeHandle(XConfigureEvent event, Window* window, Display* display)
 {
-    XWindowAttributes attri;
+    attri;
+
     XGetWindowAttributes(display, *window, &attri);
-    printf("Old Window X: %i || Y: %i", attri.width, attri.height);
+    //printf("Old Window X: %i || Y: %i ||| New Window? X: %i || Y: %i\n", attri.width, attri.height, event.width, event.height);
     //this displays that old windows get updated by the notifychanges :)
+
+    XWindowAttributes attri2;
+    XGetWindowAttributes(display, event.event, &attri2);
+    printf("Old Window X: %i || Y: %i ||| New Window? X: %i || Y: %i ||| Third Value? X: %i, || Y: %i\n", attri.width, attri.height, event.width, event.height, attri2.width, attri2.height);
+
+    //after some deliberation, I think we should use event.width, it looks like other windows use this, instead of querying for the attributes
+
+    adjustViewport(display, event.width, event.height);
 
     return 0;
 }

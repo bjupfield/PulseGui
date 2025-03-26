@@ -24,6 +24,8 @@ int currenting(Display* display);
 
 int destroyGLX(Display* display);
 
-int createAttachProgram(Display* display);
+int createAttachProgram(Display* display, XWindowAttributes attributes);
+
+int adjustViewport(Display* display, int width, int height);
 
 #endif

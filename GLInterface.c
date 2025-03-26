@@ -7,7 +7,7 @@ GLuint vertexBuffer;
 GLuint program = 0;
 GLuint vao = 0;
 
-int shaderCreatorAssignerDestroyer(const char* file);
+int shaderCreatorAssignerDestroyer(const char* file, int type);
 
 /*
 *   Returns True if the X Server has the Glx extension
@@ -134,21 +134,27 @@ int currenting(Display* display)
 
     return 0;
 }
-int createAttachProgram(Display* display)
+int createAttachProgram(Display* display, XWindowAttributes attributes)
 {
 
     glXMakeCurrent(display, mainWindow, context);
 
+    printf("Window Size: X: %i, Y: %i", attributes.width, attributes.height);
+
+    //glViewport(0,0, attributes.width, attributes.height);
+
     program = sigCreateProgram();
 
     // create vertex shader and link
-    shaderCreatorAssignerDestroyer("GlShaders/exampleVert.vert");
+    shaderCreatorAssignerDestroyer("GlShaders/exampleVert.vert", GL_VERTEX_SHADER);
 
     //create frag shader and link
-    shaderCreatorAssignerDestroyer("GlShaders/exampleFrag.frag");
+    shaderCreatorAssignerDestroyer("GlShaders/exampleFrag.frag", GL_FRAGMENT_SHADER);
 
     // //release shader compiler here
     sigReleaseShaderCompiler();
+
+    sigBindFragDataLocation(program, 0, "frag_color");
 
     // /*
     // * create vao (vertex array object), which stores like the linking information for buffers and locations/indexes
@@ -165,9 +171,9 @@ int createAttachProgram(Display* display)
 
     float bdata[3][3] = 
     {
-        {0.5, 1.0, 0.0},
-        {1.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0}
+        {0.0, 1.0, 0.0},
+        {-1.0, -1.0, 0.0},
+        {1.0, -1.0, 0.0}
     };
 
     sigBufferData(GL_ARRAY_BUFFER, sizeof(bdata), bdata, GL_DYNAMIC_DRAW);
@@ -188,9 +194,34 @@ int createAttachProgram(Display* display)
     return 1;
 
 }
-int shaderCreatorAssignerDestroyer(const char* file)
+/*
+* Resizes Viewport And Calls a Redraw Command, which later on we will need to have like  a draw command that dynamically calls all that we need to draw...
+*
+*
+*/
+int adjustViewport(Display* display, int width, int height)
 {
-    GLuint shader = sigCreateShader(GL_VERTEX_SHADER);
+    glXMakeCurrent(display, mainWindow, context);
+
+    glViewport(0, 0, width, height);
+
+    //insert dynamic draw commands
+
+    glClearColor(.5, .5, .5, 1);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glXSwapBuffers(display, mainWindow);
+
+    glXMakeCurrent(display, None, NULL);
+
+    return 1;
+}
+
+
+int shaderCreatorAssignerDestroyer(const char* file, int type)
+{
+    GLuint shader = sigCreateShader(type);
     GLchar *shadSource;
     FILE *File = fopen(file, "r");
     if(!File)
@@ -208,7 +239,7 @@ int shaderCreatorAssignerDestroyer(const char* file)
     fread(shadSource, 1, fileLength, File);
     shadSource[fileLength] = '\0';
 
-    printf("File\n%s", shadSource);
+    printf("File\n%s\n", shadSource);
 
     fclose(File);
     sigShaderSource(shader, 1, &shadSource, 0);

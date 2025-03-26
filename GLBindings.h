@@ -37,6 +37,11 @@ extern PointerAttachShader sigAttachShader;
 extern PointerDeleteShader sigDeleteShader;
 extern PointerReleaseShaderCompiler sigReleaseShaderCompiler;
 
+//fragshader
+typedef void(*PointerBindFragDataLocation)(GLuint program, GLuint color_attachment_point, const char* color_name_identical_to_whats_in_the_shader);
+
+extern PointerBindFragDataLocation sigBindFragDataLocation;
+
 //vertex array objects
 typedef void(*PointerCreateVertexArrays)(GLsizei count, GLuint *VAOArray);
 typedef void(*PointerBindVertexArray)(GLuint array);
