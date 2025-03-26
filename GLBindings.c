@@ -1,7 +1,9 @@
 #include "GLBindings.h"
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 //this is the first time I've actually used a macro
-#define funnyMacro(function, name) \
+//sadly cant make the pragma target the macro... very undestandable
+#define procMacro(function, name) \
     function = glXGetProcAddressARB((const GLubyte*)name); \
     if(function == NULL) \
     { \
@@ -9,74 +11,70 @@
         return 0; \
     }
 
-#define secondMacro(name2) printf("My name is %s", name2);
-
-void(*SINCreateBuffers)(GLsizei, GLuint*) = 0;
-void(*SINDeleteBuffers)(GLsizei, GLuint*) = 0;
-void(*SINBindBuffer)(GLenum, GLuint) = 0;
-void(*SINBufferData)(GLenum, GLsizeiptr, const void*, GLenum) = 0;
-void(*SINBufferStorage)(GLenum, GLsizeiptr, const void*, GLbitfield) = 0;
-void(*SINBufferSubData)(GLenum, GLintptr, GLsizeiptr, const void*) = 0;
-
-GLuint(*SINCreateProgram)() = 0;
-void(*SINAttachShader)(GLuint, GLuint) = 0;
-void(*SINDetachShader)(GLuint, GLuint) = 0;
-void(*SINLinkProgram)(GLuint) = 0;
-void(*SINUseProgram)(GLuint) = 0;
-void(*SINDeleteProgram)(GLuint) = 0;
-
-void(*SINVertexAttribPointer)(GLuint, GLuint, GLenum, GLboolean, GLsizei, const void *) = 0;
-void(*SINCreateVertexArrays)(GLsizei, GLuint*) = 0;
-void(*SINBindVertexArray)(GLuint) = 0;
-GLuint(*SINCreateShader)(GLenum) = 0;
-
-void(*SINShaderSource)(GLuint, GLsizei, const GLchar **, const GLint *) = 0;
-void(*SINCompileShader)(GLuint) = 0;
-void(*SINDeleteShader)(GLuint) = 0;
-void(*SINReleaseShaderCompiler)() = 0;
 
 
-//retry
-PointerCreateBuffers myCreateBuffers = NULL;
-PointerBindBuffers myBindBuffers = NULL;
+//buffer
+PointerCreateBuffers sigCreateBuffers = NULL;
+PointerBindBuffer sigBindBuffer = NULL;
+PointerBufferData sigBufferData = NULL;
+PointerBufferStorage sigBufferStorage = NULL;
+PointerBufferSubData sigBufferSubData = NULL;
+PointerDeleteBuffers sigDeleteBuffers = NULL;
 
+//shader
+PointerCreateShader sigCreateShader = NULL;
+PointerShaderSource sigShaderSource = NULL;
+PointerCompileShader sigCompileShader = NULL;
+PointerAttachShader sigAttachShader = NULL;
+PointerDeleteShader sigDeleteShader = NULL;
+PointerReleaseShaderCompiler sigReleaseShaderCompiler = NULL;
+
+//vao
+PointerCreateVertexArrays sigCreateVertexArrays = NULL;
+PointerBindVertexArray sigBindVertexArray = NULL;
+PointerVertexAttribPointer sigVertexAttribPointer = NULL;
+PointerEnableVertexAttribArray sigEnableVertexAttribArray = NULL;
+PointerDisableVertexAttribArray sigDisableVertexAttribArray = NULL;
+
+//program
+PointerCreateProgram sigCreateProgram = NULL;
+PointerLinkProgram sigLinkProgram = NULL;
+PointerUseProgram sigUseProgram = NULL;
+PointerDeleteProgram sigDeleteProgram = NULL;
+
+//this is the first time ive genuinely used chatgpt, like I just made it write everything below for me, and like just write out 
+//everything based on a template I made, so it saved me like ten minutes of typing by doing it instead... awesome
 int retrieveFuncs(){
-    /*
-    *
-    * Initialize all Funcs Here, Or At Least Thats probably what I will do
-    * 
-    */
-    // SINCreateBuffers = glXGetProcAddress((const GLubyte*)"glCreateBuffers");
-    // SINDeleteBuffers = glXGetProcAddress((const GLubyte*)"glDeleteBuffers");
-    // SINBindBuffer = glXGetProcAddress((const GLubyte*)"glBindBuffer");
-    // SINBufferData = glXGetProcAddress((const GLubyte*)"glBufferData");
-    // SINBufferStorage = glXGetProcAddress((const GLubyte*)"glBufferStorage");
-    // SINBufferSubData = glXGetProcAddress((const GLubyte*)"glBufferSubData");
+    //Buffer
+    procMacro(sigBindBuffer, "glBindBuffer");
+    procMacro(sigCreateBuffers, "glCreateBuffers");
+    procMacro(sigBufferData, "glBufferData");
+    procMacro(sigBufferStorage, "glBufferStorage");
+    procMacro(sigBufferSubData, "glBufferSubData");
+    procMacro(sigDeleteBuffers, "glDeleteBuffers");
 
-    // SINCreateProgram = glXGetProcAddress((const GLubyte*)"glCreateProgram");
-    // SINAttachShader = glXGetProcAddress((const GLubyte*)"glAttachShader");
-    // SINDetachShader = glXGetProcAddress((const GLubyte*)"glDetachShader");
-    // SINLinkProgram = glXGetProcAddress((const GLubyte*)"glLinkProgram");
-    // SINUseProgram = glXGetProcAddress((const GLubyte*)"glUseProgram");
-    // SINDeleteProgram = glXGetProcAddress((const GLubyte*)"glDeleteProgram");
+    //Shader
+    procMacro(sigCreateShader, "glCreateShader");
+    procMacro(sigShaderSource, "glShaderSource");
+    procMacro(sigCompileShader, "glCompileShader");
+    procMacro(sigAttachShader, "glAttachShader");
+    procMacro(sigDeleteShader, "glDeleteShader");
+    procMacro(sigReleaseShaderCompiler, "glReleaseShaderCompiler");
 
-    // SINVertexAttribPointer = glXGetProcAddress((const GLubyte*)"glVertexAttribPointer");
-    // SINCreateShader = glXGetProcAddress((const GLubyte*)"glCreateShader");
-
-    // SINShaderSource = glXGetProcAddress((const GLubyte*)"glShaderSource");
-    // SINCompileShader = glXGetProcAddress((const GLubyte*)"glCompileShader");
-    // SINDeleteShader = glXGetProcAddress((const GLubyte*)"glDeleteShader");
-    // SINReleaseShaderCompiler = glXGetProcAddress((const GLubyte*)"glReleaseShaderCompiler");
+    //vao
+    procMacro(sigCreateVertexArrays, "glCreateVertexArrays");
+    procMacro(sigBindVertexArray, "glBindVertexArray");
+    procMacro(sigVertexAttribPointer, "glVertexAttribPointer");
+    procMacro(sigEnableVertexAttribArray, "glEnableVertexAttribArray");
+    procMacro(sigDisableVertexAttribArray, "glDisableVertexAttribArray");
 
 
-    //retry 2
-    funnyMacro(myBindBuffers, "glBindBuffers");
-    funnyMacro(myCreateBuffers, "glCreateBuffers");
-    // //retry
-    // myBindBuffers = funnyMacro(myBindBuffers, "badBindBuffers");
-    // myCreateBuffers = funnyMacro(myCreateBuffers, "glCreateBuffers");
-
-    secondMacro("mine");
+    //program
+    procMacro(sigCreateProgram, "glCreateProgram");
+    procMacro(sigLinkProgram, "glLinkProgram");
+    procMacro(sigUseProgram, "glUseProgram");
+    procMacro(sigDeleteProgram, "glDeleteProgram");
 
     return 1;
 }
+#pragma GCC diagnostic pop

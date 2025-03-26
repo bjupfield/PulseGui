@@ -4,48 +4,65 @@
 
 
 //retry
-typedef void (*PointerCreateBuffers)(GLsizei, GLuint);
-typedef void (*PointerBindBuffers)(GLenum, GLuint*);
+//buffer
+typedef void(*PointerCreateBuffers)(GLsizei size, GLuint* bufferArray);
+typedef void(*PointerBindBuffer)(GLenum type, GLuint buffer);
+typedef void(*PointerBufferData)(GLenum type, GLsizeiptr size, const void *bufferData, GLenum usage);//mutable
+typedef void(*PointerBufferStorage)(GLenum type, GLsizeiptr size, const void *bufferData, GLbitfield flags);//immutable
+typedef void(*PointerBufferSubData)(GLenum type, GLintptr offset, GLsizeiptr size, const void* bufferData);
+typedef void(*PointerDeleteBuffers)(GLsizei count, const GLuint* buffers);
 
-extern PointerCreateBuffers myCreateBuffers;
-extern PointerBindBuffers myBindBuffers;
 
-//func call list, I want this to be relatively lightweight I guess so I will just retrieve func
-/*
-*
-*   Buffer Creation
-*
-*/
-extern APIENTRY void(*SINCreateBuffers)(GLsizei, GLuint*);
-extern APIENTRY void(*SINDeleteBuffers)(GLsizei, GLuint*);
-extern APIENTRY void(*SINBindBuffer)(GLenum, GLuint);
-extern APIENTRY void(*SINBufferData)(GLenum, GLsizeiptr, const void*, GLenum);//mutable
-extern APIENTRY void(*SINBufferStorage)(GLenum, GLsizeiptr, const void*, GLbitfield);//immutable
-extern APIENTRY void(*SINBufferSubData)(GLenum, GLintptr, GLsizeiptr, const void*);
+extern PointerCreateBuffers sigCreateBuffers;
+extern PointerBindBuffer sigBindBuffer;
+extern PointerBufferData sigBufferData;
+extern PointerBufferStorage sigBufferStorage;
+extern PointerBufferSubData sigBufferSubData;
+extern PointerDeleteBuffers sigDeleteBuffers;
 
-/*
-*
-* Program Creation and Linking
-*
-*/
-extern APIENTRY GLuint(*SINCreateProgram)();
-extern APIENTRY void(*SINAttachShader)(GLuint, GLuint);
-extern APIENTRY void(*SINDetachShader)(GLuint, GLuint);
-extern APIENTRY void(*SINLinkProgram)(GLuint);
-extern APIENTRY void(*SINUseProgram)(GLuint);
-extern APIENTRY void(*SINDeleteProgram)(GLuint);
+
+//shader
+typedef GLuint(*PointerCreateShader)(GLenum type);
+//P1 = Shader, P2 = String Amount (Always 1), P3 = string array, P4 = 0, always
+typedef void(*PointerShaderSource)(GLuint shader, GLsizei countSHOULDALWAYSBE1, const GLchar** fileString, const GLint* leaveASZERO);
+typedef void(*PointerCompileShader)(GLuint shader);
+typedef void(*PointerAttachShader)(GLuint program, GLuint shader);
+typedef void(*PointerDeleteShader)(GLuint Shader);
+typedef void(*PointerReleaseShaderCompiler)(void);
+
+extern PointerCreateShader sigCreateShader;
+extern PointerShaderSource sigShaderSource;
+extern PointerCompileShader sigCompileShader;
+extern PointerAttachShader sigAttachShader;
+extern PointerDeleteShader sigDeleteShader;
+extern PointerReleaseShaderCompiler sigReleaseShaderCompiler;
+
+//vertex array objects
+typedef void(*PointerCreateVertexArrays)(GLsizei count, GLuint *VAOArray);
+typedef void(*PointerBindVertexArray)(GLuint array);
+typedef void(*PointerVertexAttribPointer)(GLuint location, GLint componentSize, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
+typedef void(*PointerEnableVertexAttribArray)(GLuint location);
+typedef void(*PointerDisableVertexAttribArray)(GLuint location);
+
+extern PointerCreateVertexArrays sigCreateVertexArrays;
+extern PointerBindVertexArray sigBindVertexArray;
 //this func rolls vertexattribformat, vertexattribbinding, vertexbindvertexbuffer into one func, just needs to call
 //call createvertexarrays, bindvertexarray, and ... bindbuffer beforehand
-extern APIENTRY void(*SINVertexAttribPointer)(GLuint, GLuint, GLenum, GLboolean, GLsizei, const void *);
-extern APIENTRY void(*SINCreateVertexArrays)(GLsizei, GLuint*);
-extern APIENTRY void(*SINBindVertexArray)(GLuint);
-extern APIENTRY GLuint(*SINCreateShader)(GLenum);
-//P1 = Shader, P2 = String Amount (Always 1), P3 = string array, P4 = 0, always
-extern APIENTRY void(*SINShaderSource)(GLuint, GLsizei, const GLchar **, const GLint *);
-extern APIENTRY void(*SINCompileShader)(GLuint);
-extern APIENTRY void(*SINAttachShader)(GLuint, GLuint);
-extern APIENTRY void(*SINDeleteShader)(GLuint);
-extern APIENTRY void(*SINReleaseShaderCompiler)();
+extern PointerVertexAttribPointer sigVertexAttribPointer;
+//both use the currently bound vertex array object
+extern PointerEnableVertexAttribArray sigEnableVertexAttribArray;
+extern PointerDisableVertexAttribArray sigDisableVertexAttribArray;
+
+//program
+typedef GLuint(*PointerCreateProgram)(void);
+typedef void(*PointerLinkProgram)(GLuint program);
+typedef void(*PointerUseProgram)(GLuint program);
+typedef void(*PointerDeleteProgram)(GLuint program);
+
+extern PointerCreateProgram sigCreateProgram;
+extern PointerLinkProgram sigLinkProgram;
+extern PointerUseProgram sigUseProgram;
+extern PointerDeleteProgram sigDeleteProgram;
 
 
 

@@ -11,6 +11,8 @@
         "chrono": "c",
         "typeindex": "c",
         "typeinfo": "c",
-        "functional": "c"
+        "functional": "c",
+        "gl.h": "c",
+        "stdio.h": "c"
     }
 }

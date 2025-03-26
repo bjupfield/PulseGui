@@ -7,6 +7,7 @@ GLuint vertexBuffer;
 GLuint program = 0;
 GLuint vao = 0;
 
+int shaderCreatorAssignerDestroyer(const char* file);
 
 /*
 *   Returns True if the X Server has the Glx extension
@@ -66,30 +67,18 @@ XVisualInfo *retrieveVisual(Display* display)
 */
 int initializeWindow(Display* display, Window window)
 {
-    printf("hitwentfour");
 
     mainWindow = glXCreateWindow(display, config, window, NULL);
     context = glXCreateNewContext(display, config,  GLX_RGBA_TYPE, NULL, True);
 
     glXMakeCurrent(display, mainWindow, context);
-    printf("hitwentfour");
 
     retrieveFuncs();
 
-
     //we shouldnt do it like this... this is bad, dont do this... lol... going to keep like this for now
-    //SINCreateBuffers(1, &vertexBuffer);
-    //SINBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    printf("hitwentfour");
 
-    for(int i = 0; i < 400000000; i++)
-    {
-
-    }
-
-    myCreateBuffers((GLsizei)1, &vertexBuffer);
-    printf("hitwentfour");
-    // myBindBuffers(GL_ARRAY_BUFFER, vertexBuffer);
+    sigCreateBuffers((GLsizei)1, &vertexBuffer);
+    sigBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 
 
     /*
@@ -107,10 +96,10 @@ int initializeWindow(Display* display, Window window)
 int destroyGLX(Display* display)
 {
     glXDestroyWindow(display, mainWindow);
-    SINUseProgram(0);
-    SINDeleteProgram(program);
+    sigUseProgram(0);
+    sigDeleteProgram(program);
+    sigDeleteBuffers(1, &vertexBuffer);
     glXDestroyContext(display, context);
-    SINDeleteBuffers(1, vertexBuffer);
 }
 /*
 * Create and Release Current Context Test
@@ -129,7 +118,7 @@ int currenting(Display* display)
         {1.0, 0.0, 0.0}
     };
 
-    SINBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
+    sigBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
 
     glEnd();
 
@@ -145,78 +134,88 @@ int currenting(Display* display)
 
     return 0;
 }
-int createAttachProgram()
+int createAttachProgram(Display* display)
 {
-    program = SINCreateProgram();
 
-    //create vertex shader and link
-    GLuint vertShad = SINCreateShader(GL_VERTEX_SHADER);
-    char *vertShadSource;
-    fileReader(vertShadSource, "exampleVert.vert");
-    SINShaderSource(vertShad, 1, vertShadSource, 0);
-    SINCompileShader(vertShad);
+    glXMakeCurrent(display, mainWindow, context);
 
-    SINAttachShader(program, vertShad);
-    //its attached to program so its only flagged for deletion, once non-attached will be deleted
-    SINDeleteShader(vertShad);
+    program = sigCreateProgram();
+
+    // create vertex shader and link
+    shaderCreatorAssignerDestroyer("GlShaders/exampleVert.vert");
 
     //create frag shader and link
-    GLuint fragShad = SINCreateShader(GL_FRAGMENT_SHADER);
-    char *fragShadSource;
-    fileReader(fragShadSource, "exampleFrag.frag");
-    SINShaderSource(fragShad, 1, fragShadSource, 0);
-    SINCompileShader(fragShad);
+    shaderCreatorAssignerDestroyer("GlShaders/exampleFrag.frag");
 
-    SINAttachShader(program, fragShad);
+    // //release shader compiler here
+    sigReleaseShaderCompiler();
 
-    SINDeleteShader(fragShad);
-    
-    /*
-    * create vao (vertex array object), which stores like the linking information for buffers and locations/indexes
-    * into a single object, so you can say this buffer will be attached to this index/location of a shader
-    * and store it inside this object
-    */
+    // /*
+    // * create vao (vertex array object), which stores like the linking information for buffers and locations/indexes
+    // * into a single object, so you can say this buffer will be attached to this index/location of a shader
+    // * and store it inside this object
+    // */
 
-    SINCreateVertexArrays(1, &vao);
-    SINBindVertexArray(vao);
+    sigCreateVertexArrays(1, &vao);
+    sigBindVertexArray(vao);
 
-    //bind attributes link program, and use
-    //i really need to make tyedefs for these functions so their readable
-    SINVertexAttribPointer(0, 3, GL_BYTE, GL_TRUE, 0, 0);
+    // //bind attributes link program, and use
+    // //i really need to make tyedefs for these functions so their readable
+    sigVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
 
-    float data[3][3] = 
+    float bdata[3][3] = 
     {
-        {0.0, 0.0, 0.0},
         {0.5, 1.0, 0.0},
-        {1.0, 0.0, 0.0}
+        {1.0, 0.0, 0.0},
+        {0.0, 0.0, 0.0}
     };
 
-    SINBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
+    sigBufferData(GL_ARRAY_BUFFER, sizeof(bdata), bdata, GL_DYNAMIC_DRAW);
 
-    SINLinkProgram(program);
+    sigEnableVertexAttribArray(0);
+
+    sigLinkProgram(program);
 
     //activae the sleeper agent
-    SINUseProgram(program);
+    sigUseProgram(program);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glXSwapBuffers(display, mainWindow);
+
+    glXMakeCurrent(display, None, NULL);
 
     return 1;
 
 }
-//returns 0 if fails, string = store file in, file = file name
-int fileReader(char *string, const char* file)
+int shaderCreatorAssignerDestroyer(const char* file)
 {
+    GLuint shader = sigCreateShader(GL_VERTEX_SHADER);
+    GLchar *shadSource;
     FILE *File = fopen(file, "r");
     if(!File)
     {
+        printf("Failed to open %s\n", file);
         return 0;
     }
+    printf("Made it past\n");
     fseek(File, 0, SEEK_END);
     int fileLength = ftell(File);
+    printf("FileLength: %i\n", fileLength);
     rewind(File);
 
-    char *str = (char *)malloc((fileLength + 1) * sizeof(char));
-    fread(str, 1, fileLength, File);
-    string[fileLength] = '\0';
+    shadSource = (GLchar*)malloc((fileLength + 1) * sizeof(char));
+    fread(shadSource, 1, fileLength, File);
+    shadSource[fileLength] = '\0';
+
+    printf("File\n%s", shadSource);
 
     fclose(File);
+    sigShaderSource(shader, 1, &shadSource, 0);
+    sigCompileShader(shader);
+
+    sigAttachShader(program, shader);
+    //its attached to program so its only flagged for deletion, once non-attached will be deleted
+    // sigDeleteShader(shader);
     return 1;
 }

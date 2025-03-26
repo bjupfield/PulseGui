@@ -24,6 +24,6 @@ int currenting(Display* display);
 
 int destroyGLX(Display* display);
 
-int createAttachProgram();
+int createAttachProgram(Display* display);
 
 #endif
