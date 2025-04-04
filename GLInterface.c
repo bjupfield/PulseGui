@@ -145,11 +145,11 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
 
     program = sigCreateProgram();
 
-    // create vertex shader and link
-    //shaderCreatorAssignerDestroyer("GlShaders/exampleVert.vert", GL_VERTEX_SHADER);
+    //create vertex shader and link
+    shaderCreatorAssignerDestroyer("GlShaders/exampleVert.vert", GL_VERTEX_SHADER);
 
     //create frag shader and link
-    //shaderCreatorAssignerDestroyer("GlShaders/exampleFrag.frag", GL_FRAGMENT_SHADER);
+    shaderCreatorAssignerDestroyer("GlShaders/exampleFrag.frag", GL_FRAGMENT_SHADER);
 
     // //release shader compiler here
     sigReleaseShaderCompiler();
@@ -251,6 +251,10 @@ int shaderCreatorAssignerDestroyer(const char* file, int type)
     if(!success)
     {
         printf("Compilation Error\n");
+        char errorLog[400];
+        int size;
+        sigGetShaderInfoLog(shader, 400, &size, errorLog);
+        printf("Error: %s\n", errorLog);
         sigDeleteShader(shader);
         free(shadSource);
         return 1;
@@ -258,14 +262,21 @@ int shaderCreatorAssignerDestroyer(const char* file, int type)
 
 
     sigAttachShader(program, shader);
-    sigGetProgramiv(program, GL_LINK_STATUS, &success);
-    if(!success)
-    {
-        printf("Linking Error\n");
-        sigDeleteShader(shader);
-        free(shadSource);
-        return 1;
-    }
+
+    //I think linking is done collectively at the end, the above func doesnt "link" a program
+    //together it just says to the program object this shader object is attached or whatever, leaving the code here though in case of future need
+    // sigGetProgramiv(program, GL_LINK_STATUS, &success);
+    // if(!success)
+    // {
+    //     printf("Linking Error\n");
+    //     char errorLog[400];
+    //     int size;
+    //     sigGetProgramInfoLog(program, 400, &size, errorLog);
+    //     printf("Error: %s\n", errorLog);
+    //     sigDeleteShader(shader);
+    //     free(shadSource);
+    //     return 1;
+    // }
 
     //its attached to program so its only flagged for deletion, once non-attached will be deleted
     sigDeleteShader(shader);
