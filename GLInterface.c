@@ -146,15 +146,15 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
     program = sigCreateProgram();
 
     // create vertex shader and link
-    shaderCreatorAssignerDestroyer("GlShaders/exampleVert.vert", GL_VERTEX_SHADER);
+    //shaderCreatorAssignerDestroyer("GlShaders/exampleVert.vert", GL_VERTEX_SHADER);
 
     //create frag shader and link
-    shaderCreatorAssignerDestroyer("GlShaders/exampleFrag.frag", GL_FRAGMENT_SHADER);
+    //shaderCreatorAssignerDestroyer("GlShaders/exampleFrag.frag", GL_FRAGMENT_SHADER);
 
     // //release shader compiler here
     sigReleaseShaderCompiler();
 
-    sigBindFragDataLocation(program, 0, "frag_color");
+    //sigBindFragDataLocation(program, 0, "frag_color");
 
     // /*
     // * create vao (vertex array object), which stores like the linking information for buffers and locations/indexes
@@ -244,9 +244,31 @@ int shaderCreatorAssignerDestroyer(const char* file, int type)
     fclose(File);
     sigShaderSource(shader, 1, &shadSource, 0);
     sigCompileShader(shader);
+    
+    //maybe errors in compilation are causing my issues
+    int success;
+    sigGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        printf("Compilation Error\n");
+        sigDeleteShader(shader);
+        free(shadSource);
+        return 1;
+    }
+
 
     sigAttachShader(program, shader);
+    sigGetProgramiv(program, GL_LINK_STATUS, &success);
+    if(!success)
+    {
+        printf("Linking Error\n");
+        sigDeleteShader(shader);
+        free(shadSource);
+        return 1;
+    }
+
     //its attached to program so its only flagged for deletion, once non-attached will be deleted
-    // sigDeleteShader(shader);
+    sigDeleteShader(shader);
+    free(shadSource);
     return 1;
 }

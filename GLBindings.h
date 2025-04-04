@@ -29,6 +29,7 @@ typedef void(*PointerCompileShader)(GLuint shader);
 typedef void(*PointerAttachShader)(GLuint program, GLuint shader);
 typedef void(*PointerDeleteShader)(GLuint Shader);
 typedef void(*PointerReleaseShaderCompiler)(void);
+typedef void(*PointerGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
 
 extern PointerCreateShader sigCreateShader;
 extern PointerShaderSource sigShaderSource;
@@ -36,6 +37,7 @@ extern PointerCompileShader sigCompileShader;
 extern PointerAttachShader sigAttachShader;
 extern PointerDeleteShader sigDeleteShader;
 extern PointerReleaseShaderCompiler sigReleaseShaderCompiler;
+extern PointerGetShaderiv sigGetShaderiv;
 
 //fragshader
 typedef void(*PointerBindFragDataLocation)(GLuint program, GLuint color_attachment_point, const char* color_name_identical_to_whats_in_the_shader);
@@ -63,11 +65,13 @@ typedef GLuint(*PointerCreateProgram)(void);
 typedef void(*PointerLinkProgram)(GLuint program);
 typedef void(*PointerUseProgram)(GLuint program);
 typedef void(*PointerDeleteProgram)(GLuint program);
+typedef void(*PointerGetProgramiv)(GLuint program, GLenum pname, GLint *params);
 
 extern PointerCreateProgram sigCreateProgram;
 extern PointerLinkProgram sigLinkProgram;
 extern PointerUseProgram sigUseProgram;
 extern PointerDeleteProgram sigDeleteProgram;
+extern PointerGetProgramiv sigGetProgramiv;
 
 
 

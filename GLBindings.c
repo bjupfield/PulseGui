@@ -28,6 +28,7 @@ PointerCompileShader sigCompileShader = NULL;
 PointerAttachShader sigAttachShader = NULL;
 PointerDeleteShader sigDeleteShader = NULL;
 PointerReleaseShaderCompiler sigReleaseShaderCompiler = NULL;
+PointerGetShaderiv sigGetShaderiv = NULL;
 
 //fragshader
 PointerBindFragDataLocation sigBindFragDataLocation = NULL;
@@ -44,6 +45,7 @@ PointerCreateProgram sigCreateProgram = NULL;
 PointerLinkProgram sigLinkProgram = NULL;
 PointerUseProgram sigUseProgram = NULL;
 PointerDeleteProgram sigDeleteProgram = NULL;
+PointerGetProgramiv sigGetProgramiv = NULL;
 
 //this is the first time ive genuinely used chatgpt, like I just made it write everything below for me, and like just write out 
 //everything based on a template I made, so it saved me like ten minutes of typing by doing it instead... awesome
@@ -63,6 +65,7 @@ int retrieveFuncs(){
     procMacro(sigAttachShader, "glAttachShader");
     procMacro(sigDeleteShader, "glDeleteShader");
     procMacro(sigReleaseShaderCompiler, "glReleaseShaderCompiler");
+    procMacro(sigGetShaderiv, "glGetShaderiv");
 
     //fragshader
     procMacro(sigBindFragDataLocation, "glBindFragDataLocation");
@@ -80,6 +83,7 @@ int retrieveFuncs(){
     procMacro(sigLinkProgram, "glLinkProgram");
     procMacro(sigUseProgram, "glUseProgram");
     procMacro(sigDeleteProgram, "glDeleteProgram");
+    procMacro(sigGetProgramiv, "glGetProgramiv");
 
     return 1;
 }
