@@ -8,6 +8,15 @@
 #include <stdlib.h>
 #include "GLBindings.h"
 
+/*
+* The Near and far plane will be the z dimensions that 
+* define the different layers that the "divs" can be
+* displayed in
+*/
+#define farClip = 10
+#define nearClip = 0 
+
+
 
 /*
 * Checks if Server Has OpenGl Available
@@ -19,8 +28,6 @@ int retrieveConfig(Display* display);
 XVisualInfo *retrieveVisual(Display* display);
 
 int initializeWindow(Display* display, Window window);
-
-int currenting(Display* display);
 
 int destroyGLX(Display* display);
 

@@ -49,6 +49,9 @@ PointerDeleteProgram sigDeleteProgram = NULL;
 PointerGetProgramiv sigGetProgramiv = NULL;
 PointerGetProgramInfoLog sigGetProgramInfoLog = NULL;
 
+//query
+PointerGetIntegerv sigGetIntegerv = NULL;
+
 //this is the first time ive genuinely used chatgpt, like I just made it write everything below for me, and like just write out 
 //everything based on a template I made, so it saved me like ten minutes of typing by doing it instead... awesome
 int retrieveFuncs(){
@@ -88,6 +91,9 @@ int retrieveFuncs(){
     procMacro(sigDeleteProgram, "glDeleteProgram");
     procMacro(sigGetProgramiv, "glGetProgramiv");
     procMacro(sigGetProgramInfoLog, "glGetProgramInfoLog");
+
+    //querry
+    procMacro(sigGetIntegerv, "glGetIntegerv");
 
     return 1;
 }

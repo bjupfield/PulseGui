@@ -7,6 +7,16 @@ GLuint vertexBuffer;
 GLuint program = 0;
 GLuint vao = 0;
 
+/*
+* stores window height and width for projections
+*/
+struct xysize
+{
+    uint32_t x;
+    uint32_t y;
+}; struct xysize width;
+
+
 int shaderCreatorAssignerDestroyer(const char* file, int type);
 
 /*
@@ -71,6 +81,8 @@ int initializeWindow(Display* display, Window window)
     mainWindow = glXCreateWindow(display, config, window, NULL);
     context = glXCreateNewContext(display, config,  GLX_RGBA_TYPE, NULL, True);
 
+    
+
     glXMakeCurrent(display, mainWindow, context);
 
     retrieveFuncs();
@@ -101,47 +113,23 @@ int destroyGLX(Display* display)
     sigDeleteBuffers(1, &vertexBuffer);
     glXDestroyContext(display, context);
 }
-/*
-* Create and Release Current Context Test
-* 
-*/
-int currenting(Display* display)
-{
-
-    glXMakeCurrent(display, mainWindow, context);
-
-    glBegin(GL_TRIANGLES);
-    float data[3][3] = 
-    {
-        {0.0, 0.0, 0.0},
-        {0.5, 1.0, 0.0},
-        {1.0, 0.0, 0.0}
-    };
-
-    sigBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
-
-    glEnd();
-
-    glXSwapBuffers(display, mainWindow);
-    // glFinish();
-
-
-    // /*
-    // * This is how the Specification on pg 41 recommends releasing the context
-    // * Only applies if releasing it fully, that is there is no other context to draw in
-    // */
-    glXMakeCurrent(display, None, NULL);
-
-    return 0;
-}
 int createAttachProgram(Display* display, XWindowAttributes attributes)
 {
+    
+
+    int csa[2];
 
     glXMakeCurrent(display, mainWindow, context);
 
     printf("Window Size: X: %i, Y: %i", attributes.width, attributes.height);
 
-    //glViewport(0,0, attributes.width, attributes.height);
+    sigGetIntegerv(GL_MAX_VIEWPORT_DIMS, csa);
+
+    printf("Max size: %i || %i\n", csa[0], csa[1]);
+
+    glViewport(0,0, attributes.width, attributes.height);
+    glViewport(0,0, 1, 1);
+
 
     program = sigCreateProgram();
 
@@ -169,11 +157,15 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
     // //i really need to make tyedefs for these functions so their readable
     sigVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
 
-    float bdata[3][3] = 
+    float bdata[6][3] = 
     {
         {0.0, 1.0, 0.0},
         {-1.0, -1.0, 0.0},
-        {1.0, -1.0, 0.0}
+        {1.0, -1.0, 0.0},
+        // {1.0, -1.0, 0.0},
+        // {0.0, 1.0, 0.0},
+        // {1.0, 1.0, 0.0},
+
     };
 
     sigBufferData(GL_ARRAY_BUFFER, sizeof(bdata), bdata, GL_DYNAMIC_DRAW);
@@ -185,7 +177,7 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
     //activae the sleeper agent
     sigUseProgram(program);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glXSwapBuffers(display, mainWindow);
 
@@ -199,17 +191,22 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
 *
 *
 */
+// 248, 249, 346
+// and distance, 250, 269
+// onto a subspace, 308
 int adjustViewport(Display* display, int width, int height)
 {
     glXMakeCurrent(display, mainWindow, context);
 
     glViewport(0, 0, width, height);
+    // glViewport(0, 0, 1, 1);
+
 
     //insert dynamic draw commands
 
     glClearColor(.5, .5, .5, 1);
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
     glXSwapBuffers(display, mainWindow);
 

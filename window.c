@@ -5,6 +5,10 @@
 #include <unistd.h> //this is for sleep remove plz
 
 #include "GLInterface.h"
+#include "windowElements.h"
+
+//current build command, make a build file later
+//gcc -o window window.c GLInterface.c GLBindings.c -lX11 -lGL -lGLX
 
 /*
 * Event Handling Functions

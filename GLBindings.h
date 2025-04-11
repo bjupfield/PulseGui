@@ -77,6 +77,10 @@ extern PointerDeleteProgram sigDeleteProgram;
 extern PointerGetProgramiv sigGetProgramiv;
 extern PointerGetProgramInfoLog sigGetProgramInfoLog;
 
+//query
+typedef void(*PointerGetIntegerv)(GLenum pname, GLint *data);
+
+extern PointerGetIntegerv sigGetIntegerv;
 
 /*
 * 
