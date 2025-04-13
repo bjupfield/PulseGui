@@ -5,7 +5,7 @@
 #include <unistd.h> //this is for sleep remove plz
 
 #include "GLInterface.h"
-#include "windowElements.h"
+#include "swcWindow.h"
 
 //current build command, make a build file later
 //gcc -o window window.c GLInterface.c GLBindings.c -lX11 -lGL -lGLX
@@ -26,6 +26,7 @@ int plzDestroy = 1;
 
 int main(int argc, char **argv)
 {
+    initWindow(0, 0, 0, 0, 0, 0);
     Display* display = XOpenDisplay(NULL);
 
     //we will set an errorhandler down the line, but I don't really want to mess with it now
@@ -34,7 +35,7 @@ int main(int argc, char **argv)
     XVisualInfo *info = NULL;
     if(queryServer(display))
     {
-        printf("Has X Server || Has a Config: %i\n", retrieveConfig(display));
+        printf("Has X Server || Has a Config: %i\n", retrieveConfig(display, defConfiguration));
         info = retrieveVisual(display);
     }
 

@@ -23,7 +23,7 @@
 */
 int queryServer(Display* display);
 
-int retrieveConfig(Display* display);
+int retrieveConfig(Display* display, uint32_t* confg);
 
 XVisualInfo *retrieveVisual(Display* display);
 

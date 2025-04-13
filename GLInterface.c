@@ -32,30 +32,10 @@ int queryServer(Display* display)
 /*
 *   Returns True if a Config was retrieved and Saved that Matches the Specifications
 */
-int retrieveConfig(Display* display)
+int retrieveConfig(Display* display, uint32_t* confg)
 {
     int count;
-    int fifty[] = 
-    {
-        GLX_DOUBLEBUFFER, True,
-        GLX_RED_SIZE, 8,
-        GLX_GREEN_SIZE, 8,
-        GLX_BLUE_SIZE, 8,
-        GLX_ALPHA_SIZE, 8,
-        GLX_BUFFER_SIZE, 32,
-        GLX_DEPTH_SIZE, 16,
-        GLX_RENDER_TYPE, GLX_RGBA_BIT,
-        GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-        GLX_X_RENDERABLE, True,
-        GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
-        GLX_CONFIG_CAVEAT, GLX_NONE,
-        GLX_ACCUM_RED_SIZE, 1,
-        GLX_ACCUM_GREEN_SIZE, 1,
-        GLX_ACCUM_BLUE_SIZE, 1,
-        
-        None    
-    };
-    GLXFBConfig* configs = glXChooseFBConfig(display, 0, fifty, &count);
+    GLXFBConfig* configs = glXChooseFBConfig(display, 0, confg, &count);
     if(count > 0)
     {
         
@@ -162,9 +142,9 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
         {0.0, 1.0, 0.0},
         {-1.0, -1.0, 0.0},
         {1.0, -1.0, 0.0},
-        // {1.0, -1.0, 0.0},
-        // {0.0, 1.0, 0.0},
-        // {1.0, 1.0, 0.0},
+        {0.5, 1.0, 0.0},
+        {1.0, -1.0, 0.0},
+        {1.0, 1.0, 0.0},
 
     };
 

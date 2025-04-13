@@ -13,6 +13,9 @@
         "typeinfo": "c",
         "functional": "c",
         "gl.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "keysym.h": "c",
+        "swcwindow.h": "c",
+        "stdlib.h": "c"
     }
 }
