@@ -16,6 +16,24 @@
         "stdio.h": "c",
         "keysym.h": "c",
         "swcwindow.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "array": "c",
+        "atomic": "c",
+        "bit": "c",
+        "deque": "c",
+        "forward_list": "c",
+        "list": "c",
+        "vector": "c",
+        "memory_resource": "c",
+        "optional": "c",
+        "string_view": "c",
+        "random": "c",
+        "fstream": "c",
+        "istream": "c",
+        "span": "c",
+        "system_error": "c",
+        "type_traits": "c",
+        "tuple": "c",
+        "variant": "c"
     }
 }
