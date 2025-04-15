@@ -34,6 +34,11 @@
         "system_error": "c",
         "type_traits": "c",
         "tuple": "c",
-        "variant": "c"
+        "variant": "c",
+        "any": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "unordered_set": "c",
+        "iterator": "c"
     }
 }

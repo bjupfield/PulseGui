@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> //this is for sleep remove plz
+#include<stdalign.h>
 
 #include "GLInterface.h"
 #include "swcWindow.h"
@@ -90,6 +91,8 @@ int main(int argc, char **argv)
     destroyGLX(display);
 
     XCloseDisplay(display);
+
+    printf("\n MaxAlignOf: %li\n", sizeof(swcFreedPointer));
 
     return 0;
 

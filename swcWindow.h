@@ -5,6 +5,8 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <stdint.h>
+#include <stdalign.h>
+#include <string.h>
 #include "GLInterface.h"
 
 #define zLayers 10;
@@ -31,11 +33,45 @@ typedef struct {
     */
 
 }swcWin;
+/*
+* Arena Definition
+* This arena is specifically designed for windows
+* the alignment will be max alignment... just because, why not, whats the worst that could happen, at most we lose 8 bytes 
+* per padding, but storing if a div needs more alignment would cost more
+* Freed pointers will be stored at the end with backwards linking, 
+* so the amount of space used will equivalent to requestedallocation / minSize * sizeof(swcFreedPointer)
+* and will allow for the freeing of data
+*/
+typedef struct{
+    char* pointer;
+    size_t size;
+}swcFreedPointer;
+
+typedef struct {
+    char* beg;//current next allocation location
+    char* end;//current last available memory for normal allocation(also the start of freedpointers)
+    char* origin;//actual pointer to beginning of memory location of arena
+    char* assignedPointers;//assigned pointers for deallocation... or rather for allowing deallocation so when memory reorganization occurs memory can be saved
+//  every bit of data stored gains an assignedpointer datapointer
+//  which eventually we will program a "garbage collector"
+//  which when the arena is full will begin a reallocation process where a new arena is allocated, or several
+//  whic are than filled with only assigned pointers, which can be deleted with a dealloc function, dereferncing data
+//  so that it will not be saved once the new arena is allocated
+}swcArena;
 
 
-typedef uint32_t(*funcPointer)(swcDiv*);
-typedef uint32_t(*resizePointer)(swcDiv*, uint32_t x, uint32_t y);
-typedef uint32_t(*handlePointer)(swcDiv**);
+swcArena creArena(size_t size, size_t avgData);
+uint32_t desArena(swcArena *arena);
+void *alloc(swcArena *a, size_t size);
+uint32_t deAlloc(void* pointer, size_t size);
+
+
+
+struct swcDiv;
+typedef uint32_t(*funcPointer)(struct swcDiv*);
+typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t x, uint32_t y);
+typedef uint32_t(*handlePointer)(struct swcDiv**);
+
 /**
  * @brief hi
  * 
@@ -44,7 +80,7 @@ typedef uint32_t(*handlePointer)(swcDiv**);
  */
 typedef struct {
     swcWin* win;
-    swcDiv* parent;
+    struct swcDiv* parent;
     uint32_t handleGroup;
     uint32_t posx;
     uint32_t posy;
@@ -52,7 +88,7 @@ typedef struct {
     uint32_t dimy;
     uint32_t programGroup;//these two can probably be the same
     uint32_t programName;
-    _Float32 vba;
+    _Float32* vba;
     funcPointer drawFunc;
     funcPointer onLoad;
     resizePointer resizeFunc;
@@ -64,7 +100,14 @@ typedef struct {
     * (which occurs when it recieves an event from the xserver). it than iterates through these events and throws
     * each event function its event handlegroup, which is like an array pointing to all the divs in that group
     */
+    size_t size;
+    /*
+    * Currently thinking of making an arena allocater, but that necessitates knowing the size of every div
+    * because of this the the above variables need to be filled, by the constructor, hmmm
+    * at least a default constructor can be provided, that you just need to pass sizeof(yourdiv)
+    */
 }swcDiv;
+
 
 swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t posy, uint32_t dimx, uint32_t dimy);
 // int adjustWinSize();

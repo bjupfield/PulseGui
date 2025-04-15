@@ -27,6 +27,106 @@ uint64_t defMask = ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask
     VisibilityChangeMask|StructureNotifyMask;
 
 
+//TODO:
+//  CREATE A MEMEORY MANAGER THAT HANDLES ALL ARENAS.... OR AT LEAST MOST OF THEM.... HOPEFULLY
+//  SIMPLE JUST HAVE AN ARRAY OF ARENAS, THAT IT ASSIGNS THE LATEST DATA TO THE LAST ONE, WHICH IT
+//  HAS A SIMPLE int POINTER TO THE ARRAY FOR, AND THAN HAVE IT SORT AND DISCARD THIS ARRAY EVERY
+//  TIME A REALLOC CALL OR WHATEVER WE ARE SAYING NEEDS TO HAPPEN TO FREE MEMORY OCCURS
+
+/**
+ * @brief Create and return an arena of size 
+ * 
+ * @param size The amount of memory to allocate
+ * @param avgData Around how large most data points should be, used to allocate assigned memory locater
+ * because of this, this shouldnt be used for small and known data types, only large and uknown
+ * @return swcArena 
+ */
+swcArena creArena(size_t size, size_t avgData)
+{
+    //TODO: couple with garbage collector
+    size_t calcSize = size + ((size / (avgData * 2)) * sizeof(swcFreedPointer));
+    swcArena arena = {0};
+    arena.origin = calloc(1, calcSize);//need initialization to zero for assigned pointers
+    arena.beg = arena.origin;
+    arena.end = arena.beg + (ptrdiff_t)calcSize;
+    arena.assignedPointers = arena.end;
+
+    return arena;
+}
+/**
+ * @brief Destroys arena
+ * 
+ * @param arena 
+ * @return uint32_t 
+ */
+
+uint32_t desArena(swcArena *arena)
+{
+    //TODO: add decoupling from garbage collector
+    free(arena->origin);
+    memset(arena, 0, sizeof(swcArena));
+}
+
+/**
+ * @brief return pointer with allocated size * count
+ * 
+ * @param size 
+ * @param count 
+ * @return void* || Returns allocated data if success, if fail nullptr if failed(no space left in arena) 
+ */
+void *alloc(swcArena *a, size_t size)
+{
+    //everythings aligned on 16 bytes
+    //dereference pointer at the end of all data so on dealloc calls can say data is gone
+    //first find padding for original data
+    //second alignment with dereference pointer
+    size_t padding = -(size_t)a->beg & (uint32_t)15;
+    size_t dereferencePointer = size + (-(size + padding) & (alignof(size_t) - 1));//location of dereference pointer
+    size_t remaining = a->assignedPointers - a->beg;
+
+    if(remaining < dereferencePointer + sizeof(size_t) + padding)
+    {
+        return 0;
+        //TODO: handle this
+        //needs like an outside func that catches a null pointer and than allocates a new arena to hold more data
+    }
+
+    void *pointer;
+    a->beg += padding;
+    
+    a->assignedPointers -= sizeof(size_t);
+    *(a->assignedPointers) = (size_t)a->beg;
+
+    pointer = a->beg;
+    
+    a->beg += dereferencePointer;
+    *(a->beg) = (size_t)a->assignedPointers;
+
+    a->beg += sizeof(size_t);
+
+    return pointer;
+}
+
+//above func heavily inspired by:
+//https://nullprogram.com/blog/2023/09/27/
+//srry for not a proper reference :P
+
+/**
+ * @brief Deallocates pointers so on next realloc of an overflowing arena its memory is wiped
+ * 
+ * @param pointer data location
+ * @param size size of data
+ * @return 1 if success
+ */
+
+uint32_t deAlloc(void* pointer, size_t size)
+{
+    (*(size_t*)(*(size_t*)(pointer + size + (-(size + (size_t)pointer) & (alignof(size_t) - 1))))) = 0;
+    //grab the pointers pointer to a pointer and dereference that pointers pointer by setting it to zero
+    return 1;
+}
+
+
 /**
  * @brief Attempts to create and return window based on passed params, pass null to config for default config and mask
  * 
@@ -86,6 +186,9 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     //remove dummy
     XDestroyWindow(display, win.mainWin);
+
+    swcArena a;
+    ;
 
     return win;
 }
