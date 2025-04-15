@@ -37,19 +37,22 @@ uint64_t defMask = ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask
  * @brief Create and return an arena of size 
  * 
  * @param size The amount of memory to allocate
- * @param avgData Around how large most data points should be, used to allocate assigned memory locater
- * because of this, this shouldnt be used for small and known data types, only large and uknown
+ * @param minData Maximum data size will fail upon minData < size
  * @return swcArena 
  */
-swcArena creArena(size_t size, size_t avgData)
+swcArena creArena(size_t size, size_t minData)
 {
-    //TODO: couple with garbage collector
-    size_t calcSize = size + ((size / (avgData * 2)) * sizeof(swcFreedPointer));
+    //TODO: couple with garbage collector, create failure output
+    if(minData > size)
+    {
+        //fail
+    }
     swcArena arena = {0};
-    arena.origin = calloc(1, calcSize);//need initialization to zero for assigned pointers
+    arena.origin = calloc(1, size);//need initialization to zero for assigned pointers
     arena.beg = arena.origin;
-    arena.end = arena.beg + (ptrdiff_t)calcSize;
-    arena.assignedPointers = arena.end;
+    arena.end = arena.beg + size;
+    arena.size = size;
+    arena.minData = minData;
 
     return arena;
 }
@@ -68,7 +71,7 @@ uint32_t desArena(swcArena *arena)
 }
 
 /**
- * @brief return pointer with allocated size * count
+ * @brief return pointer with allocated size
  * 
  * @param size 
  * @param count 
@@ -81,29 +84,16 @@ void *alloc(swcArena *a, size_t size)
     //first find padding for original data
     //second alignment with dereference pointer
     size_t padding = -(size_t)a->beg & (uint32_t)15;
-    size_t dereferencePointer = size + (-(size + padding) & (alignof(size_t) - 1));//location of dereference pointer
-    size_t remaining = a->assignedPointers - a->beg;
-
-    if(remaining < dereferencePointer + sizeof(size_t) + padding)
+    if(a->end - a->beg - padding < size)
     {
         return 0;
         //TODO: handle this
         //needs like an outside func that catches a null pointer and than allocates a new arena to hold more data
     }
-
     void *pointer;
     a->beg += padding;
-    
-    a->assignedPointers -= sizeof(size_t);
-    *(a->assignedPointers) = (size_t)a->beg;
-
     pointer = a->beg;
-    
-    a->beg += dereferencePointer;
-    *(a->beg) = (size_t)a->assignedPointers;
-
-    a->beg += sizeof(size_t);
-
+    a->beg += size;
     return pointer;
 }
 
@@ -111,20 +101,164 @@ void *alloc(swcArena *a, size_t size)
 //https://nullprogram.com/blog/2023/09/27/
 //srry for not a proper reference :P
 
-/**
- * @brief Deallocates pointers so on next realloc of an overflowing arena its memory is wiped
- * 
- * @param pointer data location
- * @param size size of data
- * @return 1 if success
- */
 
-uint32_t deAlloc(void* pointer, size_t size)
+/**
+ * @brief Create a memory manager with initial size of stSize
+ * 
+ * @param stSize 
+ * @return swcMemMan 
+ */
+swcMemMan createMan(uint32_t stSize, uint32_t count)
 {
-    (*(size_t*)(*(size_t*)(pointer + size + (-(size + (size_t)pointer) & (alignof(size_t) - 1))))) = 0;
-    //grab the pointers pointer to a pointer and dereference that pointers pointer by setting it to zero
-    return 1;
+    swcMemMan ret = 
+    {
+        .count = 0,
+        .size = stSize + 1,
+        .arenas = (swcArena*)calloc(stSize + 1, sizeof(swcArena)),
+        .nameSize = count,
+        .nameCount = 1,//tree start
+    };
+    swcArena *a = addArena(sizeof(swcName) * 2000, sizeof(swcName), &ret);
+
+    ret.namesTree = (swcName*)alloc(a, sizeof(swcName));
+    ret.namesTree->name = 1 << 15;//for binary tree start, max divs i guess is sizeof(uint32_t) - 1
+    ret.namesTree->pointer = 0;
+    ret.namesTree->size = 0;
+    ret.namesTree->lSize = 0;
+    ret.namesTree->rSize = 0;
+    return ret;
 }
+
+/**
+ * @brief Add an arena to the manager
+ * 
+ * @param size 
+ * @param avgData 
+ * @param manager 
+ * @return swcArena* 
+ */
+swcArena* addArena(size_t size, size_t avgData, swcMemMan* manager)
+{
+    if(manager->count < manager->size)
+    {
+        manager->count += 1; 
+        manager->arenas[manager->count - 1] = creArena(size, avgData);
+    }
+    //TODO: expand arena container and create another
+}
+
+/**
+ * @brief returns pointer of data block of size size attached to manager
+ * 
+ * @param size 
+ * @param manager 
+ * @return void* 
+ */
+void *allocM(size_t size, swcMemMan *manager)
+{
+    swcArena* a = &manager->arenas[manager->count + 1];
+
+    void* data = alloc(a, size);
+
+    return data;
+
+}
+
+/**
+ * @brief Allocates a named memory space, to be used for long term storage (Ideally for divs only).
+ * Uses a binary tree algo to generate names, for speed binary nodes store node sizes
+ * 
+ * @param size 
+ * @return uint32_t 
+ */
+uint32_t allocNamed(size_t size, swcMemMan* manager)
+{
+    void* data = allocM(size, manager);
+    
+    //gen name
+    swcName* name = (swcName*)alloc(manager->arenas, sizeof(swcName));
+
+    swcName* root = manager->namesTree;
+    uint32_t genName = root->name;
+    while(root->lChild == 0 && root->rChild == 0)
+    {
+        if(root->lSize > root->rSize)
+        {
+            root->rSize++;
+            root = root->rChild;
+            
+            continue;
+        }
+        root->lSize++;
+        root = root->lChild;
+        genName >>= 1;
+    }
+    if(root->lSize > root->rSize)
+    {
+        root->rChild = name;
+        root->rSize++;
+        genName += root->name;
+    }
+    else
+    {
+        root->lChild = name;
+        root->lSize++;
+        genName = root->name - genName;
+    }
+
+    name->name = genName;
+    name->pointer = data;
+    name->par = root;
+    name->size = size;
+
+    return genName;
+}
+
+/**
+ * @brief Reorganizes Arenas, returns new "manager"
+ * 
+ * @param manager
+ * @return uint32_t 
+ */
+swcMemMan reconfigureArenas(swcMemMan* manager)
+{
+    uint32_t avgSize = 0;
+    uint32_t minSize = 0;
+    uint32_t i;
+    for(i = 0; i < manager->count; i++)
+    {
+        avgSize += manager->arenas[i].size; 
+        minSize = minSize < manager->arenas[i].mData ? manager->arenas[i].mData : minSize;
+    }
+    avgSize /= i;
+    avgSize = minSize < avgSize ? avgData : minSize;
+
+    /*
+    * This might be the completely incorrect approach, it might be better to just configure all arena
+    * data into one massive arena, but thats dependent upon how much deletion of data occurs,
+    * or how long term the data is for now ill pretend that this is the faster method
+    */
+
+    swcMemMan ret = createMan(manager->size * 1.5);//sure 1.5, hope there is enough discarded data to justify the small increase, hopefully there is a decrease of total data
+
+    swcArena *curArena = addArena(avgSize, avgData, &ret);
+    for(i = 0; i < manager->count; i++)
+    {
+        manager->arenas[i].end -= sizeof(size_t);
+        while(manager->arenas->end >= manager->arenas->assignedPointers)
+        {
+            void* data = (void*)*(manager->arenas->end);
+            size_t size = *(manager->arenas->end + sizeof(size_t));
+            void* buffer = alloc(curArena, size);
+            alloc(curArena, size);
+            memcpy()
+
+            manager->arenas->end -= sizeof(swcAssignedPointer);
+        }
+
+    }
+}
+
 
 
 /**

@@ -92,7 +92,9 @@ int main(int argc, char **argv)
 
     XCloseDisplay(display);
 
-    printf("\n MaxAlignOf: %li\n", sizeof(swcFreedPointer));
+    printf("\n MaxAlignOf: %li\n", sizeof(swcDiv));
+
+    
 
     return 0;
 
