@@ -39,6 +39,9 @@
         "string": "c",
         "unordered_map": "c",
         "unordered_set": "c",
-        "iterator": "c"
+        "iterator": "c",
+        "xlib.h": "c",
+        "cstdint": "c",
+        "stdint.h": "c"
     }
 }
