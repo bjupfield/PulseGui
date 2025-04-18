@@ -2,7 +2,7 @@
 #include <X11/keysym.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h> //this is for sleep remove plz
+#include <unistd.h> //this is for sleep remove plz, do not remove this is now for fork
 #include<stdalign.h>
 
 //#include "GLInterface.h"
@@ -24,6 +24,18 @@ int plzDestroy = 1;
 
 int main(int argc, char **argv)
 {
+
+    uint32_t pid = fork();
+    if(pid > 0)
+    {
+        return 0;
+    }
+    else if(pid < 0)
+    {
+        printf("Failed to Init");
+        return 0;
+    }
+
     initWindow(0, 0, 0, 0, 0, 0);
     Display* display = XOpenDisplay(NULL);
 
