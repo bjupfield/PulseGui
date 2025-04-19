@@ -90,7 +90,14 @@ typedef struct {
     Window mainWin;
     uint32_t programGroupCount;
     uint32_t* groupCounts;
-    uint32_t handleGroupCount;
+    uint32_t eventGroups;//name
+    /*
+    * Data Structere  Event Group void *: (doesnt really work in a struct)
+    * groupsCount = uint32_t (4 Bytes) : the amount of groups there are (event types, amount handled by this window)
+    * groupsSize = uint32_t (8ytes) : the size of each name container
+    * groupCurCounts c = array of uint64_t count is value of a (groupsCount * 8 Bytes): first 4 bytes assigned to event type second 4 bytes amount of divs currently assigned to each group... includes deallocated windows untill event group sorted
+    * eventGroups = array of arrays of uint32_t (groupsCount * groupsSize * 4 * Bytes): grouped names of divs, each group begins at its sizeof(groupsCount) + sizeof(groupsSize) + sizeof(groupsCurCount) + groupPos * groupsSize
+    */
     swcMemMan manager;
     Display* dis;
 
@@ -106,6 +113,7 @@ typedef struct {
     */
 
 }swcWin;
+
 
 
 struct swcDiv;

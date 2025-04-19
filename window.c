@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    initWindow(0, 0, 0, 0, 0, 0);
+    // initWindow(0, 0, 0, 0, 0, 0);
     Display* display = XOpenDisplay(NULL);
 
     //we will set an errorhandler down the line, but I don't really want to mess with it now
@@ -87,6 +87,9 @@ int main(int argc, char **argv)
 
     while(plzDestroy)
     {
+        uint32_t eventsQueued = XEventsQueued(display, QueuedAfterFlush);
+        printf("%i\n", eventsQueued);
+
         XNextEvent(display, &event);
         handleEvent(&event, display, &w);
     }
@@ -103,7 +106,11 @@ int main(int argc, char **argv)
 
     printf("\n MaxAlignOf: %li\n", sizeof(swcDiv));
 
-    
+    uint32_t count = 1;
+    printf("\n\n1++: %i\n", count++);
+    count = 1;
+    printf("\n\n++1: %i\n", ++count);
+
 
     return 0;
 
