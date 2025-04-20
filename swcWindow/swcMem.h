@@ -12,6 +12,7 @@ void* allocM(size_t size, swcMemMan* manager);
 uint32_t allocNamed(size_t size, swcMemMan *manager);
 uint32_t deallocNamed(uint32_t name, swcMemMan *manager);
 void* retrieveName(uint32_t name, swcMemMan *manager);
+swcName* retrieveNameL(uint32_t name, swcMemMan* manager);
 swcArena* addArena(size_t size, size_t minData, swcMemMan *manager);
 
 #endif

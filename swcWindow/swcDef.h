@@ -7,6 +7,8 @@
 #include <stdalign.h>
 #include "../glInterface/GLInterface.h"
 
+#define InitialHandleToDivCount 40
+
 static uint32_t defConfiguration[] =
 {
     GLX_DOUBLEBUFFER, True,
@@ -82,6 +84,36 @@ typedef struct {
     //the name tree needs to be made specifically for this, or something does
 }swcMemMan;
 
+/**
+ * @brief This is a container that holds the association between X window events and swcWindow event handlers. an X window event can have
+ * handleToEventCount handles associated with it. The Handle container is of size ((4 + handletoevent * 4) * eventGroup count). The first
+ * 4 bytes of each region is the event/mask, the rest of the bytes are the name of the event that are associated with said event/mask,
+ * with each name pointing to a eventHandle struct 
+ * 
+ * THIS IS NOW A THEORETICAL STRUCT
+ * 
+ * Because function pointers are what we are using to assign to handles we are going to include them in our handlecontainer, the first sizeof(uint32_t)
+ * bytes being the event/mask of the handle container the second
+ * sizeof(uint32_t) bytes being the function pointer and the the next sizeof(uint32_t) bytes of handlecontainer being the name... 
+ * because of possible alignment problems the data will now not
+ * be handled in a struct
+ */
+// typedef struct {
+//     uint32_t eventGroupCount;
+//     uint32_t handleToEventCount;
+//     uint32_t handleContainer[];
+// }eventGroup;
+
+/**
+ * @brief Container for event handlers. Handle is the function pointer, divNames are the names of the div associated with the
+ * function pointer
+ * 
+ */
+typedef struct {
+    uintptr_t handle;
+    uint32_t divNames[]; 
+}eventHandle;
+
 //TODO:
 // Add single frame and double frame arenas for smaller data dynamic data within the divs
 
@@ -90,14 +122,7 @@ typedef struct {
     Window mainWin;
     uint32_t programGroupCount;
     uint32_t* groupCounts;
-    uint32_t eventGroups;//name
-    /*
-    * Data Structere  Event Group void *: (doesnt really work in a struct)
-    * groupsCount = uint32_t (4 Bytes) : the amount of groups there are (event types, amount handled by this window)
-    * groupsSize = uint32_t (8ytes) : the size of each name container
-    * groupCurCounts c = array of uint64_t count is value of a (groupsCount * 8 Bytes): first 4 bytes assigned to event type second 4 bytes amount of divs currently assigned to each group... includes deallocated windows untill event group sorted
-    * eventGroups = array of arrays of uint32_t (groupsCount * groupsSize * 4 * Bytes): grouped names of divs, each group begins at its sizeof(groupsCount) + sizeof(groupsSize) + sizeof(groupsCurCount) + groupPos * groupsSize
-    */
+    uint32_t eventGroups;//name for eventGroup struct
     swcMemMan manager;
     Display* dis;
 
@@ -119,7 +144,7 @@ typedef struct {
 struct swcDiv;
 typedef uint32_t(*funcPointer)(struct swcDiv*);
 typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t x, uint32_t y);
-typedef uint32_t(*handlePointer)(struct swcDiv**);
+typedef uint32_t(*handlePointer)(struct swcDiv**, XEvent* event);
 
 /**
  * @brief hi

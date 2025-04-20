@@ -267,6 +267,11 @@ void* retrieveName(uint32_t name, swcMemMan* manager)
     return root->pointer;
 }
 
+swcName* retrieveNameL(uint32_t name, swcMemMan* manager)
+{
+    return binSearch(name, manager);
+}
+
 /**
  * @brief frees a manager passed as a pointer
  * 

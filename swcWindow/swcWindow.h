@@ -19,7 +19,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 // int adjustWinSize();
 // int addDiv();
 // vertexBI drawWindow();
-swcWin desWindow(swcWin swcWin);
+uint32_t desWindow(swcWin* swcWin);
 
 uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy, 
     uint32_t dimx, uint32_t dimy, funcPointer onLoad, funcPointer drawFunc,
