@@ -258,7 +258,6 @@ uint32_t deallocNamed(uint32_t name, swcMemMan* manager)
  */
 void* retrieveName(uint32_t name, swcMemMan* manager)
 {
-
     swcName *root = binSearch(name, manager);
     if(root == NULL)
     {

@@ -98,11 +98,16 @@ typedef struct {
  * because of possible alignment problems the data will now not
  * be handled in a struct
  */
-// typedef struct {
-//     uint32_t eventGroupCount;
-//     uint32_t handleToEventCount;
-//     uint32_t handleContainer[];
-// }eventGroup;
+struct funcHandleArrays{
+    uintptr_t func;
+    uint32_t divsName;
+};
+typedef struct {
+    uint32_t eventGroupCount;
+    uint32_t handleToEventCount;
+    uint32_t events[24];//max of 24 eventtypes
+    struct funcHandleArrays funcHandles[];
+}evntGroup;
 
 /**
  * @brief Container for event handlers. Handle is the function pointer, divNames are the names of the div associated with the

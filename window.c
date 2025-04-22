@@ -25,18 +25,21 @@ int plzDestroy = 1;
 int main(int argc, char **argv)
 {
 
-    uint32_t pid = fork();
-    if(pid > 0)
-    {
-        return 0;
-    }
-    else if(pid < 0)
-    {
-        printf("Failed to Init");
-        return 0;
-    }
+    // uint32_t pid = fork();
+    // if(pid > 0)
+    // {
+    //     return 0;
+    // }
+    // else if(pid < 0)
+    // {
+    //     printf("Failed to Init");
+    //     return 0;
+    // }
 
-    // initWindow(0, 0, 0, 0, 0, 0);
+    printf("mapping should start");
+    // return 0;
+
+    initWindow(defConfiguration, defMask, 0, 0, 200, 200);
     Display* display = XOpenDisplay(NULL);
 
     //we will set an errorhandler down the line, but I don't really want to mess with it now
@@ -88,7 +91,7 @@ int main(int argc, char **argv)
     while(plzDestroy)
     {
         uint32_t eventsQueued = XEventsQueued(display, QueuedAfterFlush);
-        printf("%i\n", eventsQueued);
+        //printf("%i\n", eventsQueued);
 
         XNextEvent(display, &event);
         handleEvent(&event, display, &w);

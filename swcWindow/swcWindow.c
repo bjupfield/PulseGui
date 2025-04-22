@@ -1,6 +1,7 @@
 #include "swcWindow.h"
 
-
+uint32_t eventHandler(swcWin* win);
+uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
 
 /**
@@ -65,13 +66,19 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     win.dis = display;
 
+    printf((initializeWindow(win.dis, win.mainWin) == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n"));
+    XMapWindow(win.dis, win.mainWin);
+    XFlush(win.dis);
+
     win.manager = createMan(sizeof(swcDiv) * 5000, 10);
 
     addArena(sizeof(swcDiv) * 2000, sizeof(swcDiv), &win.manager);
 
-    initEventGroups(&win, eventMask, 40);
+    win.eventGroups = initEventGroups(&win, eventMask, 40);
 
     uint32_t divName = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), PointerMotionMask, NULL);
+    uint32_t di = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
+
 
     swcDiv *div = retrieveName(divName, &win.manager);
 
@@ -79,8 +86,13 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     //EVENT HANDLER
 
+    printf("ButtonPressMask: %i\n\n", ButtonPressMask & eventMask);
 
-
+    for(uint64_t i = 0; i < 20000000; i++)
+    {
+        swcMemMan* man = &win.manager;
+        handleEvents(&win);
+    }
     //DRAWER
 
 
@@ -107,36 +119,45 @@ uint32_t desWindow(swcWin* win)
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount)
 {
     uint32_t count = 0; 
-    for(uint32_t mask = 1; mask < 1 <26; mask <<= 1)//refer to X.h event definitions for the explanations of this bit mask
+    uint8_t bool = 0;
+    for(uint32_t mask = 1; mask < 1 << 26; mask <<= 1)//refer to X.h event definitions for the explanations of this bit mask
     {
-        if(mask & eventGroups)
+        printf("num: %i\n", mask & eventGroups);
+        if(eventGroups & ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask)
+            {
+                if(!bool)
+                {
+                    count++;
+                    bool = 1;
+                }
+                continue;
+            }
+        if(eventGroups & mask)
         {
             count++;
         }
     }
     
     uint32_t name = allocNamed(sizeof(uint32_t)  * 2 + sizeof(uint32_t) * count + (count * handleToEventCount) * (sizeof(uintptr_t) + sizeof(uint32_t)), &swcWin->manager);
-    void* eventGroup = retrieveName(name, &swcWin->manager);
+    evntGroup* eventGroup = retrieveName(name, &swcWin->manager);
     
-    *((uint32_t*)(eventGroup)) = count;
-    *(((uint32_t*)eventGroup) + 1) = handleToEventCount;
+    eventGroup->eventGroupCount = count;
+    eventGroup->handleToEventCount = handleToEventCount;
     //um ignore this plz:
-    uint8_t bool = 0;
-    for(uint32_t mask = 1, count = 0; mask < 1 <26; mask <<= 1)
+    for(uint32_t mask = 1, bool = 0, count = 0; mask < 1 << 26; mask <<= 1)
     {
-        if(mask & eventGroups)
+        if(eventGroups & ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask)
         {
-            if(mask & ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask)
+            if(!bool)
             {
-                if(!bool)
-                {
-                    
-                    *(uint32_t*)((char*)eventGroup + sizeof(uint32_t) * 2 + (sizeof(uint32_t) + (sizeof(uintptr_t) + sizeof(uint32_t) * handleToEventCount)) * count++) = PointerMotionMask;//they all use the same event type, motion notify
-                    bool = 1;
-                }
-                continue;
+                eventGroup->events[count++] = PointerMotionMask;//they all use the same event type, motion notify
+                bool = 1;
             }
-            *(uint32_t*)((char*)eventGroup + sizeof(uint32_t) * 2 + (sizeof(uint32_t) + (sizeof(uintptr_t) + sizeof(uint32_t) * handleToEventCount)) * count++) = mask;
+            continue;
+        }
+        if(eventGroups & mask)
+        {
+            eventGroup->events[count++] = mask;
         }
     }
     return name;
@@ -152,24 +173,27 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
  */
 uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWin* win)
 {
-    void* eventGroups = retrieveName(win->eventGroups, &win->manager);
-    for(uint32_t i = 0; i < *(uint32_t*)eventGroups; i++)
+    for(int i = 0; i < 20000000; i++){
+
+    }
+    evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, &win->manager);
+    for(uint32_t i = 0; i < eventGroups->eventGroupCount; i++)
     {
-        char *pos = ((char*)eventGroups + sizeof(uint32_t) * 2 + i * (sizeof(uint32_t) + /*handletopointercount*/*((uint32_t*)eventGroups + 1) * (sizeof(uintptr_t) + sizeof(uint32_t))));
-        if(eventMask & *(uint32_t*)pos)
+        if(eventMask & eventGroups->events[i])
         {
+            uint32_t saveIt = i;
             //TODO: make this better, It does not need to be a for loop and use i
-            pos += sizeof(uint32_t);
-            for(i = 0; i < *((uint32_t*)eventGroups + 1); i++)
+            for(i = 0; i < eventGroups->handleToEventCount; i++)
             {
-                if(*(uintptr_t*)pos == func)
+                uint32_t pos = saveIt * eventGroups->handleToEventCount + i;
+                if(eventGroups->funcHandles[pos].func == func)
                 {
-                    swcName* divNameContainerName = retrieveNameL(*(uintptr_t*)(pos + sizeof(uint32_t)), &win->manager);
+                    swcName* divNameContainerName = retrieveNameL(eventGroups->funcHandles[pos].divsName, &win->manager);
                     for(i = 0, i < divNameContainerName->size / sizeof(uint32_t); i++;)
                     {
                         if(*((uint32_t*)divNameContainerName->pointer + i) != 0)
                         {
-                            *((uint32_t*)divNameContainerName->pointer + i) = 0;
+                            *((uint32_t*)divNameContainerName->pointer + i) = divName;
                             return 1;
                         }
                     }
@@ -177,20 +201,19 @@ uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWi
                     //reallocate this name container but larger because it reached teh end of the for loop without finding space
                     return 0;
                 }
-                if(*(uintptr_t*)pos == 0)
+                if(eventGroups->funcHandles[pos].func == 0)
                 {
                     //create new eventhandle
                     //add current divname to it
-                    *(uintptr_t*)pos = func;
+                    eventGroups->funcHandles[pos].func = func;
                     //TODO: look at all allocNamed calls to see if they should really just return a swcName* instead of retrieveName...
-                    uint32_t name = allocNamed(InitialHandleToDivCount, &win->manager);
+                    uint32_t name = allocNamed(InitialHandleToDivCount * sizeof(uint32_t), &win->manager);
                     uint32_t* divContainer = (uint32_t*)retrieveName(name, &win->manager);
                     
                     *divContainer = divName;
-                    *(uint32_t*)(pos + sizeof(uintptr_t)) = name;
+                    eventGroups->funcHandles[pos].divsName = name;
                     return 1;
                 }
-                pos += sizeof(uint32_t) + sizeof(uintptr_t);
             }
         }
     }
@@ -252,7 +275,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);
 
-    divC(divPoint, onLoad);
+    // divC(divPoint, onLoad);
 
     return div;
 
@@ -295,8 +318,8 @@ uint32_t handleEvents(swcWin* win)
     uint32_t events = XEventsQueued(win->dis, QueuedAfterFlush);
     for(events; events > 0; events--)
     {
-        XEvent* event;
-        XNextEvent(win->dis, event);
+        XEvent event;
+        XNextEvent(win->dis, &event);
 
         //TODO:
         //Look into GNU C compiler and find how it translates switch statements... I tried but I got lost on file c-tree.h
@@ -304,17 +327,33 @@ uint32_t handleEvents(swcWin* win)
         //event mask, but I don't know how to do that in a more effecient manner than below
 
         //using gnu c extension nested funcs
-        uint32_t* eventGroups = retrieveName(win->eventGroups, &win->manager);
-        uint32_t size = *(eventGroups + 1);
-        uint8_t groupCount = *(eventGroups);
+        evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, &win->manager);
+        uint32_t handleCount = eventGroups->handleToEventCount;
+        uint8_t groupCount = eventGroups->eventGroupCount;
+
         void pass_event(uint32_t target) { 
-            for(uint8_t i = 0; i < (groupCount); i++)
+            for(uint32_t c = 0; c < (groupCount); c++)
             {
-                if(*(eventGroups + 2 + 2 * i) & target)
+                if(eventGroups->events[c] & target)
                 {
-                    for(uint32_t c = 0; c < *(eventGroups + 3 + 2 * i); c++)
+                    for(c = 0; c < handleCount; c++)
                     {
-                        //((swcDiv*)retrieveName(*(eventGroups + 2 + 2 * groupCount + i * size), &win->manager))->eventFunc(event);
+                        handlePointer func = (handlePointer)eventGroups->funcHandles[c].func;
+                        if(func == NULL)
+                        {
+                            return;
+                        }
+                        //TODO: retrieve and sort funcs right, for now lazily pass?
+                        swcName* name =  retrieveNameL(eventGroups->funcHandles[c].divsName, &win->manager);
+
+                        //TODO: create the 1-frame only memory and assign this data to it
+                        swcDiv** divs = (swcDiv**)malloc(sizeof(swcDiv*) * (name->size / sizeof(uint32_t)));
+                        for(uint32_t b = 0; b < name->size >> 2; b++)
+                        {
+                            divs[b] = retrieveName(((uint32_t*)name->pointer + b), &win->manager);
+                        }
+                        func(divs, &event);
+                        
 
                     }
                     //I think a use of a goto __label__ here would be faster than returning to the switch and breaking
@@ -322,39 +361,53 @@ uint32_t handleEvents(swcWin* win)
                 }
             }
         }
-        switch(event->type)
+        switch(event.type)
         {
             case MotionNotify:
+                pass_event(ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask);
                 break;
             case ButtonPress:
+                pass_event(ButtonPressMask);
                 break;
             case ButtonRelease:
+                pass_event(ButtonReleaseMask);
                 break;
             case ColormapNotify:
+                pass_event(ColormapChangeMask);
                 break;
             case EnterNotify:
+                pass_event(EnterWindowMask);
                 break;
             case LeaveNotify:
+                pass_event(LeaveWindowMask);
                 break;
             case Expose:
+                pass_event(ExposureMask);
                 break;
             case GraphicsExpose:
             //intended no break
             case NoExpose:
+                pass_event(GCGraphicsExposures);
                 break;
             case FocusIn:
             //intended no break
             case FocusOut:
+                pass_event(FocusChangeMask);
                 break;
             case KeymapNotify:
+                pass_event(KeymapStateMask);
                 break;
             case KeyPress:
+                pass_event(KeyPressMask);
                 break;
             case KeyRelease:
+                pass_event(KeyReleaseMask);
                 break;
             case PropertyNotify:
+                pass_event(PropertyChangeMask);
                 break;
             case ResizeRequest:
+                //TODO: handle resize event
                 break;
             case CirculateNotify:
             //intended no break
@@ -369,14 +422,17 @@ uint32_t handleEvents(swcWin* win)
             case ReparentNotify:
             //intended no break
             case UnmapNotify:
+                pass_event(StructureNotifyMask|SubstructureNotifyMask);
                 break;
             case CirculateRequest:
             //intended no break
             case ConfigureRequest:
             //intended no break
             case MapRequest:
+                pass_event(SubstructureRedirectMask);
                 break;
             case VisibilityNotify:
+                pass_event(VisibilityChangeMask);
                 break;
             //TODO: HANDLE BELOW EVENTS
             case ClientMessage:
