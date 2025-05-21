@@ -57,7 +57,6 @@ swcArena creArena(size_t size, size_t minData)
 
 uint32_t freeArena(swcArena *arena)
 {
-    //TODO: add decoupling from garbage collector
     free(arena->origin);
     memset(arena, 0, sizeof(swcArena));
 }
@@ -79,8 +78,6 @@ void *alloc(swcArena *a, size_t size)
     if(a->end - a->beg - padding < size)
     {
         return 0;
-        //TODO: handle this
-        //needs like an outside func that catches a null pointer and than allocates a new arena to hold more data
     }
     void *pointer;
     a->beg += padding;
@@ -99,9 +96,11 @@ void *alloc(swcArena *a, size_t size)
  * 
  * @param stSize Desired Arena Count
  * @param count Names Initialization
+ * @param singleBufSize Starting size for the single buffer
+ * @param doubleBufSize Starting size for the double buffers
  * @return swcMemMan 
  */
-swcMemMan createMan(uint32_t stSize, uint32_t count)
+swcMemMan createMan(uint32_t stSize, uint32_t count, uint32_t singleBufSize, uint32_t doubleBufSize)
 {
     swcMemMan ret = 
     {
@@ -110,6 +109,11 @@ swcMemMan createMan(uint32_t stSize, uint32_t count)
         .arenas = (swcArena*)calloc(stSize + 1, sizeof(swcArena)),
         .nameSize = count,
         .nameCount = 1,//tree start
+        .singleBuffer = creArena(singleBufSize, (size_t)1),
+        .doubleBuffer1 = creArena(doubleBufSize, (size_t)1),
+        .doubleBuffer2 = creArena(doubleBufSize, (size_t)1),
+        .curDB = &ret.doubleBuffer1,
+
     };
     swcArena *a = addArena((sizeof(swcName) + (-sizeof(swcName) & alignof(swcName))) * count, sizeof(swcName), &ret);
     //TODO: change maxsize to something dynamic
@@ -120,6 +124,7 @@ swcMemMan createMan(uint32_t stSize, uint32_t count)
     ret.namesTree->size = 0;
     ret.namesTree->lSize = 0;
     ret.namesTree->rSize = 0;
+
     return ret;
 }
 
@@ -241,8 +246,6 @@ uint32_t deallocNamed(uint32_t name, swcMemMan* manager)
     swcName* root = binSearch(name, manager);
     if(root == NULL)
     {
-        //TODO:
-        //this either means a fake name is given or it has failed
         return 0;
     }
     root->pointer = 0;
@@ -314,7 +317,7 @@ swcMemMan reconfigureArenas(swcMemMan* manager)
     * or how long term the data is for now ill pretend that this is the faster method
     */
 
-    swcMemMan ret = createMan(manager->size * 1.5, manager->nameCount * 1.5);//sure 1.5, hope there is enough discarded data to justify the small increase, hopefully there is a decrease of total data
+    swcMemMan ret = createMan(manager->size * 1.5, manager->nameCount * 1.5, manager->singleBuffer.size, manager->doubleBuffer1.size);//sure 1.5, hope there is enough discarded data to justify the small increase, hopefully there is a decrease of total data
 
     swcArena *curArena = addArena(avgSize, minSize, &ret);//this line is a problem i dont know how to fix it
     //TODO: FIX ABOVE LINE(MINSIZE and AVGSIZE conflict, or not really, but it creates a memory size problem where every arena is made for the largest arena)
@@ -388,4 +391,50 @@ swcMemMan reconfigureArenas(swcMemMan* manager)
     }
     freeMemMan(manager);
     return ret;
+}
+
+/**
+ * @brief Allocates memory of size under managers single buffer, returns NULL if no space
+ * 
+ * @param size 
+ * @param manager 
+ * @return uint32_t 
+ */
+void* allocSB(size_t size, swcMemMan* manager)
+{
+
+    return alloc(&manager->singleBuffer, size);
+}
+
+/**
+ * @brief Allocates memory of size under managers double buffer, returns NULL if no space
+ * 
+ * @param size 
+ * @param manager 
+ * @return uint32_t 
+ */
+void* allocDB(size_t size, swcMemMan* manager)
+{
+    return alloc(manager->curDB, size);
+}
+
+/**
+ * @brief Resets the Single Buffer and Moves the Double Buffer, All Data Stored in the Single Buffer Is Corrupt
+ * All Data stroed in the Double Buffer From Two Frames Ago Is Corrupt
+ * @param swcMemMan* Manager
+ * 
+ */
+uint32_t frameChange(swcMemMan* manager)
+{
+    //TODO: Maybe add a way to allocate more memory if needed, I have no clue how to detect something like that
+    manager->singleBuffer.beg = manager->singleBuffer.origin;
+    if(manager->curDB == &manager->doubleBuffer1)
+    {
+        manager->curDB = &manager->doubleBuffer2;
+    }
+    else
+    {
+        manager->curDB = &manager->doubleBuffer1;
+    }
+    manager->curDB->beg = manager->curDB->origin;
 }

@@ -77,6 +77,49 @@ extern PointerDeleteProgram sigDeleteProgram;
 extern PointerGetProgramiv sigGetProgramiv;
 extern PointerGetProgramInfoLog sigGetProgramInfoLog;
 
+//uniforms
+typedef void(*PointerProgramUniform1f)(GLuint program, GLint location, GLfloat v0);
+typedef void(*PointerProgramUniform2f)(GLuint program, GLint location, GLfloat v0, GLfloat v1);
+typedef void(*PointerProgramUniform3f)(GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
+typedef void(*PointerProgramUniform4f)(GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+typedef void(*PointerProgramUniformv)(GLuint program, GLint location, GLsizei count, const GLfloat* value);
+typedef void(*PointerProgramUniformMatrix)(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
+
+extern PointerProgramUniform1f sigProgramUniform1f;
+extern PointerProgramUniform2f sigProgramUniform2f;
+extern PointerProgramUniform3f sigProgramUniform3f;
+extern PointerProgramUniform4f sigProgramUniform4f;
+extern PointerProgramUniform1f sigProgramUniform1i;
+extern PointerProgramUniform2f sigProgramUniform2i;
+extern PointerProgramUniform3f sigProgramUniform3i;
+extern PointerProgramUniform4f sigProgramUniform4i;
+extern PointerProgramUniform1f sigProgramUniform1ui;
+extern PointerProgramUniform2f sigProgramUniform2ui;
+extern PointerProgramUniform3f sigProgramUniform3ui;
+extern PointerProgramUniform4f sigProgramUniform4ui;
+extern PointerProgramUniformv sigProgramUniform1fv;
+extern PointerProgramUniformv sigProgramUniform2fv;
+extern PointerProgramUniformv sigProgramUniform3fv;
+extern PointerProgramUniformv sigProgramUniform4fv;
+extern PointerProgramUniformv sigProgramUniform1iv;
+extern PointerProgramUniformv sigProgramUniform2iv;
+extern PointerProgramUniformv sigProgramUniform3iv;
+extern PointerProgramUniformv sigProgramUniform4iv;
+extern PointerProgramUniformv sigProgramUniform1uiv;
+extern PointerProgramUniformv sigProgramUniform2uiv;
+extern PointerProgramUniformv sigProgramUniform3uiv;
+extern PointerProgramUniformv sigProgramUniform4uiv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix2fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix3fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix4fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix2x3fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix3x2fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix2x4fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix4x2fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix3x4fv;
+extern PointerProgramUniformMatrix sigProgramUniformMatrix4x3fv;
+
+
 //query
 typedef void(*PointerGetIntegerv)(GLenum pname, GLint *data);
 

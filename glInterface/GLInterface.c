@@ -1,5 +1,7 @@
 #include "GLInterface.h"
 
+uint8_t funcsBound = 0;
+GLXFBConfig initConfig;
 GLXFBConfig config;
 GLXWindow mainWindow;
 GLXContext context;
@@ -7,6 +9,238 @@ GLuint vertexBuffer;
 GLuint program = 0;
 GLuint vao = 0;
 
+typedef struct contextWinAssociation
+{
+    GLXWindow win;
+    GLXContext context;
+    uint64_t name;//size aligns the structs
+}contextWinAssociation;
+
+uint64_t winsSize;
+uint64_t winCount;
+contextWinAssociation* wins;
+
+
+/**
+ * @brief Update Uniforms attempt at "variadic Function"
+ * Count Goes After Array Pointer For Vector and Matrix Assignments
+ * Transpose Goes after Count for Matrix Assignments
+ * 
+ * Returns 1 if Success, 0 if Fail
+ * 
+ */
+uint32_t update_Uniform(GLIProgram* program, const char* name, ...)
+{
+    // va_list args;
+    va_list args;
+    va_start(args, name);
+    
+    //uint32_t type = grabUnifromType(program, name);
+    enum uniformType type = 0;
+    // uint32_t location = grabUniformLocation(program, name);
+    uint32_t location = 0;
+
+    uint32_t sBuffer[4];
+    uint32_t* buffer;
+    if(type < 0 || type > 31)
+        return 0;
+    if(type < _1fv)
+    {
+        sBuffer[0] = va_arg(args, uint32_t);
+        if(type > _1ui)
+            sBuffer[1] = va_arg(args, uint32_t);
+        if(type > _2ui)
+            sBuffer[2] = va_arg(args, uint32_t);
+        if(type > _3ui)
+            sBuffer[3] = va_arg(args, uint32_t);
+        switch(type)
+        {
+            case _1f: 
+            {
+                sigProgramUniform1f(program->program, location, (GLfloat)sBuffer[0]);
+                break;
+            }
+            case _1i:
+            {
+                sigProgramUniform1i(program->program, location, (GLfloat)sBuffer[0]);
+                break;
+            }
+            case _1ui:
+            {
+                sigProgramUniform1ui(program->program, location, (GLfloat)sBuffer[0]);
+                break;
+            }
+
+
+            case _2f:
+            {
+                sigProgramUniform2f(program-program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1]);
+                break;
+            }
+            case _2i:
+            {
+                sigProgramUniform2i(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1]);
+                break;
+            }
+            case _2ui:
+            {
+                sigProgramUniform2ui(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1]);
+                break;
+            }
+
+
+            case _3f:
+            {
+                sigProgramUniform3f(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1], (GLfloat)sBuffer[2]);
+                break;
+            }
+            case _3i:
+            {
+                sigProgramUniform3i(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1], (GLfloat)sBuffer[2]);
+                break;
+            }
+            case _3ui:
+            {
+                sigProgramUniform3ui(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1], (GLfloat)sBuffer[2]);
+                break;
+            }
+
+
+            case _4f:
+            {
+                sigProgramUniform4f(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1], (GLfloat)sBuffer[2], (GLfloat)sBuffer[3]);
+                break;
+            }
+            case _4i:
+            {
+                sigProgramUniform4i(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1], (GLfloat)sBuffer[2], (GLfloat)sBuffer[3]);
+                break;
+            }
+            case _4ui:
+            {
+                sigProgramUniform4ui(program->program, location, (GLfloat)sBuffer[0], (GLfloat)sBuffer[1], (GLfloat)sBuffer[2], (GLfloat)sBuffer[3]);
+                break;
+            }
+        }
+        va_end(args);
+        return 1;
+
+    }
+    buffer = va_arg(args, uint32_t*);
+    sBuffer[0] = va_arg(args, uint32_t);
+    if(type > _4uiv)
+        sBuffer[1] = va_arg(args, uint32_t);
+    switch(type)
+    {
+        case _1fv:
+        {
+            sigProgramUniform1fv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _2fv:
+        {
+            sigProgramUniform2fv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _3fv:
+        {
+            sigProgramUniform3fv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _4fv:
+        {
+            sigProgramUniform4fv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+
+        
+        case _1iv:
+        {
+            sigProgramUniform1iv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _2iv:
+        {
+            sigProgramUniform2iv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _3iv:
+        {
+            sigProgramUniform3iv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _4iv:
+        {
+            sigProgramUniform4iv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+
+        case _1uiv:
+        {
+            sigProgramUniform1uiv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _2uiv:
+        {
+            sigProgramUniform2uiv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _3uiv:
+        {
+            sigProgramUniform3uiv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+        case _4uiv:
+        {
+            sigProgramUniform4uiv(program->program, location, (GLsizei)sBuffer[0], (GLfloat*)buffer);
+            break;
+        }
+
+        case _x2fv:
+        {
+            sigProgramUniformMatrix2fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+        case _x3fv:
+        {
+            sigProgramUniformMatrix3fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+        case _x4fv:
+        {
+            sigProgramUniformMatrix4fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+        case _2x4fv:
+        {
+            sigProgramUniformMatrix2x4fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+        case _3x4fv:
+        {
+            sigProgramUniformMatrix3x4fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+        case _3x2fv:
+        {
+            sigProgramUniformMatrix3x2fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+        case _4x2fv:
+        {
+            sigProgramUniformMatrix4x2fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+        case _4x3fv:
+        {
+            sigProgramUniformMatrix4x3fv(program->program, location, (GLsizei)sBuffer[0], (GLboolean)sBuffer[1], (GLfloat*)buffer);
+            break;
+        }
+    }
+
+    va_end(args);
+    return 1;
+}
 /*
 * stores window height and width for projections
 */
@@ -52,9 +286,9 @@ XVisualInfo *retrieveVisual(Display* display)
 {
     return glXGetVisualFromFBConfig(display, config);
 }
-/*
-*   Returns True if Initilization Was a Success
-*/
+
+
+
 int initializeWindow(Display* display, Window window)
 {
 
@@ -161,6 +395,7 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
 
     glXSwapBuffers(display, mainWindow);
 
+    //this is the suggested way to release the context
     glXMakeCurrent(display, None, NULL);
 
     return 1;
@@ -259,4 +494,71 @@ int shaderCreatorAssignerDestroyer(const char* file, int type)
     sigDeleteShader(shader);
     free(shadSource);
     return 1;
+}
+
+/**
+ * @brief Retrieves Visual, Returns NUll if the server does not exist or the config does not exist, 
+ * 
+ * If visual exist it sets curconfig
+ *  
+ * @param display 
+ * @param config 
+ * @return XVisualInfo* 
+ */
+XVisualInfo* retVisual(Display* display, uint32_t* config)
+{
+    uint32_t error_Base, event_Base;
+    uint32_t bool = glXQueryExtension(display, &error_Base, &event_Base);
+
+    if(!bool)
+    {
+        return NULL;
+    }
+
+    uint32_t count;
+    GLXFBConfig* configs = glXChooseFBConfig(display, 0, config, &count);
+    if(count == 0)
+    {
+        return NULL;
+    }
+
+    initConfig = configs[0];
+    return glXGetVisualFromFBConfig(display, configs[0]);
+}
+/**
+ * @brief Rets Zero if Fail, else returns handle to window association
+ * 
+ * @param display 
+ * @param win 
+ * @return uint64_t 
+ */
+uint64_t glInitWindow(Display* display, Window win)
+{
+    GLXWindow window = glXCreateWindow(display, initConfig, win, NULL);
+    GLXContext cont = glXCreateNewContext(display, initConfig,  GLX_RGBA_TYPE, NULL, True);
+
+    if(window == NULL || cont == NULL)
+    {
+        return 0;
+    }
+
+    if(!funcsBound)
+    {
+        retrieveFuncs();
+        funcsBound = 1;
+        //TODO: make memory allocation size choosen by the application
+        wins = (contextWinAssociation*)malloc(sizeof(wins) * 512);
+        winsSize = 512;
+
+        wins->context = cont;
+        wins->win = window;
+        wins->name = 1;
+        winCount++;
+    }
+
+    wins[winCount].context = cont;
+    wins[winCount].win = window;
+    wins[winCount].name = winCount++ + 1;
+
+    return winCount;
 }

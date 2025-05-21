@@ -13,7 +13,7 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
  * @param posy Left Corner Y Screen Position of Window
  * @param dimx Window Width
  * @param dimy Window Height
- * @return swcWin 
+ * @return swcWin
  */
 swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t posy, uint32_t dimx, uint32_t dimy)
 {
@@ -28,18 +28,9 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //      Set ErrorHandler
     //      XSetErrorHandler(errorHandler);
 
-    if(!queryServer(display))
-    {
-        return null;
-    }
+    printf("Sizeof(GLXContext): %i || Sizeof(GlxWindow): %i\n",sizeof(GLXContext), sizeof(GLXWindow));
 
-
-    XVisualInfo *info = NULL;
-    if(!retrieveConfig(display,(config == 0 ? defConfiguration: config)))
-    {
-        return null;
-    }
-    info = retrieveVisual(display);
+    XVisualInfo* info = retVisual(display, config == 0 ? defConfiguration: config);
 
     if(info == NULL)
     {
@@ -66,11 +57,13 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     win.dis = display;
 
-    printf((initializeWindow(win.dis, win.mainWin) == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n"));
+    win.glHandle = glInitWindow(win.dis, win.mainWin);
+
+    printf(win.glHandle == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n");
     XMapWindow(win.dis, win.mainWin);
     XFlush(win.dis);
 
-    win.manager = createMan(sizeof(swcDiv) * 5000, 10);
+    win.manager = createMan(sizeof(swcDiv) * 5000, 10, 50000, 25000);
 
     addArena(sizeof(swcDiv) * 2000, sizeof(swcDiv), &win.manager);
 
@@ -90,8 +83,8 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     for(uint64_t i = 0; i < 20000000; i++)
     {
-        swcMemMan* man = &win.manager;
         handleEvents(&win);
+        frameChange(&win.manager);
     }
     //DRAWER
 
@@ -122,7 +115,6 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
     uint8_t bool = 0;
     for(uint32_t mask = 1; mask < 1 << 26; mask <<= 1)//refer to X.h event definitions for the explanations of this bit mask
     {
-        printf("num: %i\n", mask & eventGroups);
         if(eventGroups & ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask)
             {
                 if(!bool)
@@ -294,25 +286,13 @@ uint32_t delDiv(swcWin* win, uint32_t div)
     return success;
 }
 
-uint32_t eventHandler(swcWin* win)
-{
-    //checks how many events are in queue, if no events are in queue flushes than checks again
-    uint32_t eventsQueued = XEventsQueued(win->dis, QueuedAfterFlush);
-    
-    for(int i = 0; i < eventsQueued; i++)//try not to dequeue events otherwise it blocks
-    {
-        //TODO: add this to arena, should be in single-buffered memory
-        XEvent* event;
-        XNextEvent(win->dis, event);
-        event;
-    }
-}
 /**
  * @brief at end because of nested function
  * 
  * @param win 
  * @return uint32_t 
  */
+uint32_t FAKE = 0;
 uint32_t handleEvents(swcWin* win)
 {
     uint32_t events = XEventsQueued(win->dis, QueuedAfterFlush);
@@ -346,11 +326,10 @@ uint32_t handleEvents(swcWin* win)
                         //TODO: retrieve and sort funcs right, for now lazily pass?
                         swcName* name =  retrieveNameL(eventGroups->funcHandles[c].divsName, &win->manager);
 
-                        //TODO: create the 1-frame only memory and assign this data to it
-                        swcDiv** divs = (swcDiv**)malloc(sizeof(swcDiv*) * (name->size / sizeof(uint32_t)));
-                        for(uint32_t b = 0; b < name->size >> 2; b++)
+                        swcDiv** divs = (swcDiv**)allocSB(sizeof(swcDiv*) * (name->size / sizeof(uint32_t)), &win->manager);
+                        for(uint32_t b = 0; b < name->size / sizeof(uint32_t); b++)
                         {
-                            divs[b] = retrieveName(((uint32_t*)name->pointer + b), &win->manager);
+                            divs[b] = retrieveName(*((uint32_t*)name->pointer + b), &win->manager);
                         }
                         func(divs, &event);
                         

@@ -49,6 +49,41 @@ PointerDeleteProgram sigDeleteProgram = NULL;
 PointerGetProgramiv sigGetProgramiv = NULL;
 PointerGetProgramInfoLog sigGetProgramInfoLog = NULL;
 
+//uniforms
+PointerProgramUniform1f sigProgramUniform1f = NULL;
+PointerProgramUniform2f sigProgramUniform2f = NULL;
+PointerProgramUniform3f sigProgramUniform3f = NULL;
+PointerProgramUniform4f sigProgramUniform4f = NULL;
+PointerProgramUniform1f sigProgramUniform1i = NULL;
+PointerProgramUniform2f sigProgramUniform2i = NULL;
+PointerProgramUniform3f sigProgramUniform3i = NULL;
+PointerProgramUniform4f sigProgramUniform4i = NULL;
+PointerProgramUniform1f sigProgramUniform1ui = NULL;
+PointerProgramUniform2f sigProgramUniform2ui = NULL;
+PointerProgramUniform3f sigProgramUniform3ui = NULL;
+PointerProgramUniform4f sigProgramUniform4ui = NULL;
+PointerProgramUniformv sigProgramUniform1fv = NULL;
+PointerProgramUniformv sigProgramUniform2fv = NULL;
+PointerProgramUniformv sigProgramUniform3fv = NULL;
+PointerProgramUniformv sigProgramUniform4fv = NULL;
+PointerProgramUniformv sigProgramUniform1iv = NULL;
+PointerProgramUniformv sigProgramUniform2iv = NULL;
+PointerProgramUniformv sigProgramUniform3iv = NULL;
+PointerProgramUniformv sigProgramUniform4iv = NULL;
+PointerProgramUniformv sigProgramUniform1uiv = NULL;
+PointerProgramUniformv sigProgramUniform2uiv = NULL;
+PointerProgramUniformv sigProgramUniform3uiv = NULL;
+PointerProgramUniformv sigProgramUniform4uiv = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix2fv   = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix3fv   = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix4fv   = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix2x3fv = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix3x2fv = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix2x4fv = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix4x2fv = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix3x4fv = NULL;
+PointerProgramUniformMatrix sigProgramUniformMatrix4x3fv = NULL;
+
 //query
 PointerGetIntegerv sigGetIntegerv = NULL;
 
@@ -91,6 +126,47 @@ int retrieveFuncs(){
     procMacro(sigDeleteProgram, "glDeleteProgram");
     procMacro(sigGetProgramiv, "glGetProgramiv");
     procMacro(sigGetProgramInfoLog, "glGetProgramInfoLog");
+
+    //uniforms
+    procMacro(sigProgramUniform1f, "glProgramUniform1f");
+    procMacro(sigProgramUniform2f, "glProgramUniform2f");
+    procMacro(sigProgramUniform3f, "glProgramUniform3f");
+    procMacro(sigProgramUniform4f, "glProgramUniform4f");
+
+    procMacro(sigProgramUniform1i, "glProgramUniform1i");
+    procMacro(sigProgramUniform2i, "glProgramUniform2i");
+    procMacro(sigProgramUniform3i, "glProgramUniform3i");
+    procMacro(sigProgramUniform4i, "glProgramUniform4i");
+
+    procMacro(sigProgramUniform1ui, "glProgramUniform1ui");
+    procMacro(sigProgramUniform2ui, "glProgramUniform2ui");
+    procMacro(sigProgramUniform3ui, "glProgramUniform3ui");
+    procMacro(sigProgramUniform4ui, "glProgramUniform4ui");
+
+    procMacro(sigProgramUniform1fv, "glProgramUniform1fv");
+    procMacro(sigProgramUniform2fv, "glProgramUniform2fv");
+    procMacro(sigProgramUniform3fv, "glProgramUniform3fv");
+    procMacro(sigProgramUniform4fv, "glProgramUniform4fv");
+
+    procMacro(sigProgramUniform1iv, "glProgramUniform1iv");
+    procMacro(sigProgramUniform2iv, "glProgramUniform2iv");
+    procMacro(sigProgramUniform3iv, "glProgramUniform3iv");
+    procMacro(sigProgramUniform4iv, "glProgramUniform4iv");
+
+    procMacro(sigProgramUniform1uiv, "glProgramUniform1uiv");
+    procMacro(sigProgramUniform2uiv, "glProgramUniform2uiv");
+    procMacro(sigProgramUniform3uiv, "glProgramUniform3uiv");
+    procMacro(sigProgramUniform4uiv, "glProgramUniform4uiv");
+
+    procMacro(sigProgramUniformMatrix2fv,   "glProgramUniformMatrix2fv");
+    procMacro(sigProgramUniformMatrix3fv,   "glProgramUniformMatrix3fv");
+    procMacro(sigProgramUniformMatrix4fv,   "glProgramUniformMatrix4fv");
+    procMacro(sigProgramUniformMatrix2x3fv, "glProgramUniformMatrix2x3fv");
+    procMacro(sigProgramUniformMatrix3x2fv, "glProgramUniformMatrix3x2fv");
+    procMacro(sigProgramUniformMatrix2x4fv, "glProgramUniformMatrix2x4fv");
+    procMacro(sigProgramUniformMatrix4x2fv, "glProgramUniformMatrix4x2fv");
+    procMacro(sigProgramUniformMatrix3x4fv, "glProgramUniformMatrix3x4fv");
+    procMacro(sigProgramUniformMatrix4x3fv, "glProgramUniformMatrix4x3fv");
 
     //querry
     procMacro(sigGetIntegerv, "glGetIntegerv");

@@ -79,6 +79,10 @@ typedef struct {
     uint32_t nameCount;
     uint32_t nameSize;
     swcName* namesTree;
+    swcArena singleBuffer; /* Arena for single frame storage */
+    swcArena doubleBuffer1; /* Don't Know if I'll use double buffers */
+    swcArena doubleBuffer2;
+    swcArena* curDB;
     //TODO:
     //I was thinkin gof how we want two different group iterators over the divs, one over event funcs and one for draw funcs
     //the name tree needs to be made specifically for this, or something does
@@ -119,17 +123,16 @@ typedef struct {
     uint32_t divNames[]; 
 }eventHandle;
 
-//TODO:
-// Add single frame and double frame arenas for smaller data dynamic data within the divs
 
 
 typedef struct {
+    Display* dis;
     Window mainWin;
+    uint64_t glHandle;
     uint32_t programGroupCount;
     uint32_t* groupCounts;
     uint32_t eventGroups;//name for eventGroup struct
     swcMemMan manager;
-    Display* dis;
 
     /*
     * Okay What we have run into is we need mass allocation of dynamic memory
