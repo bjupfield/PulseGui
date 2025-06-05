@@ -61,7 +61,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     printf(win.glHandle == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n");
     XMapWindow(win.dis, win.mainWin);
-    XFlush(win.dis);
+    // XFlush(win.dis);
 
     win.manager = createMan(sizeof(swcDiv) * 5000, 10, 50000, 25000);
 
@@ -69,7 +69,8 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     win.eventGroups = initEventGroups(&win, eventMask, 40);
 
-    uint32_t divName = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), PointerMotionMask, NULL);
+    //for testing divs?
+    uint32_t divName = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
     uint32_t di = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
 
 
@@ -77,9 +78,8 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     printf("\n\ndiv.posx: %i\n\n", div->posx);
 
-    //EVENT HANDLER
+    // EVENT HANDLER
 
-    printf("ButtonPressMask: %i\n\n", ButtonPressMask & eventMask);
 
     for(uint64_t i = 0; i < 20000000; i++)
     {
@@ -113,9 +113,10 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
 {
     uint32_t count = 0; 
     uint8_t bool = 0;
+    swcWin->event_mask = eventGroups;
     for(uint32_t mask = 1; mask < 1 << 26; mask <<= 1)//refer to X.h event definitions for the explanations of this bit mask
     {
-        if(eventGroups & ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask)
+        if(eventGroups & (ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask) & mask)
             {
                 if(!bool)
                 {
@@ -136,9 +137,9 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
     eventGroup->eventGroupCount = count;
     eventGroup->handleToEventCount = handleToEventCount;
     //um ignore this plz:
-    for(uint32_t mask = 1, bool = 0, count = 0; mask < 1 << 26; mask <<= 1)
+    for(uint32_t mask = 1, bool = 0, count = 0; mask < (1 << 26); mask <<= 1)
     {
-        if(eventGroups & ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask)
+        if(eventGroups & (ButtonMotionMask|Button1MotionMask|Button2MotionMask|Button3MotionMask|Button4MotionMask|Button5MotionMask|PointerMotionMask) & mask)
         {
             if(!bool)
             {
@@ -295,12 +296,9 @@ uint32_t delDiv(swcWin* win, uint32_t div)
 uint32_t FAKE = 0;
 uint32_t handleEvents(swcWin* win)
 {
-    uint32_t events = XEventsQueued(win->dis, QueuedAfterFlush);
-    for(events; events > 0; events--)
+    XEvent event = { 0 };
+    while(XCheckWindowEvent(win->dis, win->mainWin, win->event_mask, &event))
     {
-        XEvent event;
-        XNextEvent(win->dis, &event);
-
         //TODO:
         //Look into GNU C compiler and find how it translates switch statements... I tried but I got lost on file c-tree.h
         //what I would like to do is have a "switch" statement that only contains the necessary cases as provided by the windows
@@ -311,24 +309,30 @@ uint32_t handleEvents(swcWin* win)
         uint32_t handleCount = eventGroups->handleToEventCount;
         uint8_t groupCount = eventGroups->eventGroupCount;
 
+        eventGroups->funcHandles[0].func;
+
+        //TODO:
+            //The Way Events are handled is psychotic, think of changing, but its rather specific code, and its done well, just like a madman though
         void pass_event(uint32_t target) { 
             for(uint32_t c = 0; c < (groupCount); c++)
             {
                 if(eventGroups->events[c] & target)
                 {
+                    uint32_t save_it = c * handleCount;
                     for(c = 0; c < handleCount; c++)
                     {
-                        handlePointer func = (handlePointer)eventGroups->funcHandles[c].func;
+                        handlePointer func = (handlePointer)eventGroups->funcHandles[save_it + c].func;
                         if(func == NULL)
                         {
                             return;
                         }
                         //TODO: retrieve and sort funcs right, for now lazily pass?
-                        swcName* name =  retrieveNameL(eventGroups->funcHandles[c].divsName, &win->manager);
+                        swcName* name =  retrieveNameL(eventGroups->funcHandles[save_it + c].divsName, &win->manager);
 
                         swcDiv** divs = (swcDiv**)allocSB(sizeof(swcDiv*) * (name->size / sizeof(uint32_t)), &win->manager);
                         for(uint32_t b = 0; b < name->size / sizeof(uint32_t); b++)
                         {
+                            //why am i passing every single div inside this group to the func?
                             divs[b] = retrieveName(*((uint32_t*)name->pointer + b), &win->manager);
                         }
                         func(divs, &event);
@@ -426,4 +430,5 @@ uint32_t handleEvents(swcWin* win)
                 break;
         }
     }
+    return 0;
 }

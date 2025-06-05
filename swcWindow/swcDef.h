@@ -131,6 +131,7 @@ typedef struct {
     uint64_t glHandle;
     uint32_t programGroupCount;
     uint32_t* groupCounts;
+    uint32_t event_mask;
     uint32_t eventGroups;//name for eventGroup struct
     swcMemMan manager;
 
