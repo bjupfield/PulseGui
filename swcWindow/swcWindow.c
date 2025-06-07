@@ -24,6 +24,9 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     // TODO: 
     //     Retrive Display Based On Mouse Position
     Display* display = XOpenDisplay(NULL);
+
+    findCurScreenNumber(display);
+
     // TODO:
     //      Set ErrorHandler
     //      XSetErrorHandler(errorHandler);
@@ -85,6 +88,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     {
         handleEvents(&win);
         frameChange(&win.manager);
+
     }
     //DRAWER
 

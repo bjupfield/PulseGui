@@ -44,7 +44,10 @@
         "cstdint": "c",
         "stdint.h": "c",
         "stdnoreturn.h": "c",
-        "swcmem.h": "c"
+        "swcmem.h": "c",
+        "stdarg.h": "c",
+        "glcreate.h": "c",
+        "swcbasedivs.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -1,11 +1,16 @@
 ie = bin
 dump = $(wildcard $(ie))
 
-fileI = $(wildcard *.c)
-fileP = $(notdir $(fileI))
-files = $(basename $(fileP))
+foldersI = $(wildcard *)
+folders = $(filter-out $(wildcard *.*),$(foldersI))
+folder = $(filter-out makefile,$(folders))
+folder += $() $()
 
-filesO = $(addprefix $(ie)/, $(addsuffix .o, $(files)))
+
+fileI = $(foreach fold,$(folder),$(wildcard $(fold)/*.c)) $(wildcard *.c)
+files = $(basename $(fileI))
+
+filesO = $(addprefix $(ie)/, $(addsuffix .o, $(notdir $(files))))
 
 libs = -lX11 -lGLInterface -lGL -L../glInterface/bin
 
@@ -17,7 +22,8 @@ ifneq ($(dump),bin)
 endif
 	-gcc -c swcDef.h -o $(ie)/swcDef.o $(libs)
 	-for file in $(files); do \
-		gcc -c $$file.c -o $(ie)/$$file.o $(libs); \
+		noDir="$${file##*/}"; \
+		gcc -c $$file.c -o $(ie)/$$noDir.o $(libs); \
 	done
 	ar rc $(ie)/libSWCWindow.a $(filesO) $(ie)/swcDef.o
 

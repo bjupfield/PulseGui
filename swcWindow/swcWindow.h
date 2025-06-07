@@ -8,6 +8,7 @@
 #include "swcDef.h"
 #include "swcMem.h"
 #include "swcBaseDivs.h"
+#include "GLfuncs/glCreate.h"
 
 #define zLayers 10;
 #define divC(div, func) div->func(div)
