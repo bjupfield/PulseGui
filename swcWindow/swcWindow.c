@@ -21,19 +21,13 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //MAKE NO RETURN
 
     swcWin null = {};
-    // TODO: 
-    //     Retrive Display Based On Mouse Position
     Display* display = XOpenDisplay(NULL);
-
-    findCurScreenNumber(display);
 
     // TODO:
     //      Set ErrorHandler
     //      XSetErrorHandler(errorHandler);
 
-    printf("Sizeof(GLXContext): %i || Sizeof(GlxWindow): %i\n",sizeof(GLXContext), sizeof(GLXWindow));
-
-    XVisualInfo* info = retVisual(display, config == 0 ? defConfiguration: config);
+    XVisualInfo* info = retVisualT(display, config == 0 ? defConfiguration: config);
 
     if(info == NULL)
     {
@@ -49,6 +43,33 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
         .colormap = XCreateColormap(display, RootWindow(display, 0), info->visual, AllocNone),
 	};
 
+    swcMemMan manager = createMan(40, 20000, 50000, 25000);
+
+    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
+
+    uint32_t windowName = allocNamed(sizeof(swcWin), &manager);
+
+    ((swcWin*)retrieveName(windowName, &manager))->mainWin = XCreateWindow(
+                display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
+                info->depth, CopyFromParent, info->visual, 
+		        CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa);
+
+
+    ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
+
+
+    ((swcWin*)retrieveName(windowName, &manager))->dis = display;
+    ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
+
+    retrieveGLFuncs((swcWin*)retrieveName(windowName, &manager));
+
+    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
+    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
+    // // XDestroyWindow(((swcWin*)retrieveName(windowName, &manager))->dis, ((swcWin*)retrieveName(windowName, &manager))->mainWin);
+    // // freeMemMan(manager);
+    desWindow((swcWin*)retrieveName(windowName, &manager));
+    // // freeMemMan(manager);
+
     swcWin win = {
         .mainWin = XCreateWindow(
         display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
@@ -60,15 +81,18 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     win.dis = display;
 
-    win.glHandle = glInitWindow(win.dis, win.mainWin);
 
-    printf(win.glHandle == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n");
+    //in.glHandle = glInitWindow(win.dis, win.mainWin);
+
+    //printf(win.glHandle == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n");
     XMapWindow(win.dis, win.mainWin);
     // XFlush(win.dis);
 
-    win.manager = createMan(sizeof(swcDiv) * 5000, 10, 50000, 25000);
+    manager = createMan(sizeof(swcDiv) * 5000, 10, 50000, 25000);
 
-    addArena(sizeof(swcDiv) * 2000, sizeof(swcDiv), &win.manager);
+    win.manager = &manager;
+
+    addArena(sizeof(swcDiv) * 2000, sizeof(swcDiv), win.manager);
 
     win.eventGroups = initEventGroups(&win, eventMask, 40);
 
@@ -77,17 +101,17 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     uint32_t di = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
 
 
-    swcDiv *div = retrieveName(divName, &win.manager);
+    swcDiv *div = retrieveName(divName, win.manager);
 
     printf("\n\ndiv.posx: %i\n\n", div->posx);
 
     // EVENT HANDLER
 
 
-    for(uint64_t i = 0; i < 20000000; i++)
+    for(uint64_t i = 0; i < 20000; i++)
     {
         handleEvents(&win);
-        frameChange(&win.manager);
+        frameChange(win.manager);
 
     }
     //DRAWER
@@ -102,8 +126,8 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 uint32_t desWindow(swcWin* win)
 {
     //TODO: make this func?
-    freeMemMan(&win->manager);
     XDestroyWindow(win->dis, win->mainWin);
+    freeMemMan(win->manager);
     return 1;
 }
 /**
@@ -135,8 +159,8 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
         }
     }
     
-    uint32_t name = allocNamed(sizeof(uint32_t)  * 2 + sizeof(uint32_t) * count + (count * handleToEventCount) * (sizeof(uintptr_t) + sizeof(uint32_t)), &swcWin->manager);
-    evntGroup* eventGroup = retrieveName(name, &swcWin->manager);
+    uint32_t name = allocNamed(sizeof(uint32_t)  * 2 + sizeof(uint32_t) * count + (count * handleToEventCount) * (sizeof(uintptr_t) + sizeof(uint32_t)), swcWin->manager);
+    evntGroup* eventGroup = retrieveName(name, swcWin->manager);
     
     eventGroup->eventGroupCount = count;
     eventGroup->handleToEventCount = handleToEventCount;
@@ -170,10 +194,7 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
  */
 uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWin* win)
 {
-    for(int i = 0; i < 20000000; i++){
-
-    }
-    evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, &win->manager);
+    evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, win->manager);
     for(uint32_t i = 0; i < eventGroups->eventGroupCount; i++)
     {
         if(eventMask & eventGroups->events[i])
@@ -185,7 +206,7 @@ uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWi
                 uint32_t pos = saveIt * eventGroups->handleToEventCount + i;
                 if(eventGroups->funcHandles[pos].func == func)
                 {
-                    swcName* divNameContainerName = retrieveNameL(eventGroups->funcHandles[pos].divsName, &win->manager);
+                    swcName* divNameContainerName = retrieveNameL(eventGroups->funcHandles[pos].divsName, win->manager);
                     for(i = 0, i < divNameContainerName->size / sizeof(uint32_t); i++;)
                     {
                         if(*((uint32_t*)divNameContainerName->pointer + i) != 0)
@@ -204,8 +225,8 @@ uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWi
                     //add current divname to it
                     eventGroups->funcHandles[pos].func = func;
                     //TODO: look at all allocNamed calls to see if they should really just return a swcName* instead of retrieveName...
-                    uint32_t name = allocNamed(InitialHandleToDivCount * sizeof(uint32_t), &win->manager);
-                    uint32_t* divContainer = (uint32_t*)retrieveName(name, &win->manager);
+                    uint32_t name = allocNamed(InitialHandleToDivCount * sizeof(uint32_t), win->manager);
+                    uint32_t* divContainer = (uint32_t*)retrieveName(name, win->manager);
                     
                     *divContainer = divName;
                     eventGroups->funcHandles[pos].divsName = name;
@@ -248,8 +269,8 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
     resizePointer resizeFunc, handlePointer eventFunc, size_t size,
     uint32_t eventTypeMask, void* excData)
 {
-    uint32_t div = allocNamed(size, &win->manager);
-    swcDiv* divPoint = (swcDiv*)retrieveName(div, &win->manager);
+    uint32_t div = allocNamed(size, win->manager);
+    swcDiv* divPoint = (swcDiv*)retrieveName(div, win->manager);
 
     if(divPoint == NULL)
     {
@@ -287,7 +308,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
  */
 uint32_t delDiv(swcWin* win, uint32_t div)
 {
-    uint32_t success = deallocNamed(div, &win->manager);
+    uint32_t success = deallocNamed(div, win->manager);
     return success;
 }
 
@@ -309,7 +330,7 @@ uint32_t handleEvents(swcWin* win)
         //event mask, but I don't know how to do that in a more effecient manner than below
 
         //using gnu c extension nested funcs
-        evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, &win->manager);
+        evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, win->manager);
         uint32_t handleCount = eventGroups->handleToEventCount;
         uint8_t groupCount = eventGroups->eventGroupCount;
 
@@ -331,13 +352,13 @@ uint32_t handleEvents(swcWin* win)
                             return;
                         }
                         //TODO: retrieve and sort funcs right, for now lazily pass?
-                        swcName* name =  retrieveNameL(eventGroups->funcHandles[save_it + c].divsName, &win->manager);
+                        swcName* name =  retrieveNameL(eventGroups->funcHandles[save_it + c].divsName, win->manager);
 
-                        swcDiv** divs = (swcDiv**)allocSB(sizeof(swcDiv*) * (name->size / sizeof(uint32_t)), &win->manager);
+                        swcDiv** divs = (swcDiv**)allocSB(sizeof(swcDiv*) * (name->size / sizeof(uint32_t)), win->manager);
                         for(uint32_t b = 0; b < name->size / sizeof(uint32_t); b++)
                         {
                             //why am i passing every single div inside this group to the func?
-                            divs[b] = retrieveName(*((uint32_t*)name->pointer + b), &win->manager);
+                            divs[b] = retrieveName(*((uint32_t*)name->pointer + b), win->manager);
                         }
                         func(divs, &event);
                         

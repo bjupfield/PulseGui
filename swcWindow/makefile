@@ -12,7 +12,7 @@ files = $(basename $(fileI))
 
 filesO = $(addprefix $(ie)/, $(addsuffix .o, $(notdir $(files))))
 
-libs = -lX11 -lGLInterface -lGL -L../glInterface/bin
+libs = -lX11 -lGL
 
 
 

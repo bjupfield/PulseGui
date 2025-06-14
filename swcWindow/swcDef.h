@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdalign.h>
 #include "../glInterface/GLInterface.h"
+#include "GLfuncs/glPointers.h"
 
 #define InitialHandleToDivCount 40
 
@@ -128,12 +129,12 @@ typedef struct {
 typedef struct {
     Display* dis;
     Window mainWin;
-    uint64_t glHandle;
     uint32_t programGroupCount;
     uint32_t* groupCounts;
     uint32_t event_mask;
     uint32_t eventGroups;//name for eventGroup struct
-    swcMemMan manager;
+    swcMemMan* manager;
+    glFuncPointers glPointers;
 
     /*
     * Okay What we have run into is we need mass allocation of dynamic memory

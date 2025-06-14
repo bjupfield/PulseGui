@@ -92,22 +92,22 @@ void *alloc(swcArena *a, size_t size)
 
 
 /**
- * @brief Create a memory manager with initial size of stSize
+ * @brief Create a memory manager with initial size of arCount
  * 
- * @param stSize Desired Arena Count
- * @param count Names Initialization
+ * @param arCount Desired Arena Count
+ * @param naCount Names Initialization
  * @param singleBufSize Starting size for the single buffer
  * @param doubleBufSize Starting size for the double buffers
  * @return swcMemMan 
  */
-swcMemMan createMan(uint32_t stSize, uint32_t count, uint32_t singleBufSize, uint32_t doubleBufSize)
+swcMemMan createMan(uint32_t arCount, uint32_t naCount, uint32_t singleBufSize, uint32_t doubleBufSize)
 {
     swcMemMan ret = 
     {
         .count = 0,
-        .size = stSize + 1,
-        .arenas = (swcArena*)calloc(stSize + 1, sizeof(swcArena)),
-        .nameSize = count,
+        .size = arCount + 1,
+        .arenas = (swcArena*)calloc(arCount + 1, sizeof(swcArena)),
+        .nameSize = naCount,
         .nameCount = 1,//tree start
         .singleBuffer = creArena(singleBufSize, (size_t)1),
         .doubleBuffer1 = creArena(doubleBufSize, (size_t)1),
@@ -115,7 +115,7 @@ swcMemMan createMan(uint32_t stSize, uint32_t count, uint32_t singleBufSize, uin
         .curDB = &ret.doubleBuffer1,
 
     };
-    swcArena *a = addArena((sizeof(swcName) + (-sizeof(swcName) & alignof(swcName))) * count, sizeof(swcName), &ret);
+    swcArena *a = addArena((sizeof(swcName) + (-sizeof(swcName) & alignof(swcName))) * naCount, sizeof(swcName), &ret);
     //TODO: change maxsize to something dynamic
 
     ret.namesTree = (swcName*)alloc(a, sizeof(swcName));
@@ -282,11 +282,18 @@ swcName* retrieveNameL(uint32_t name, swcMemMan* manager)
  */
 uint32_t freeMemMan(swcMemMan* manager)
 {
-    for(int i = 0; i < manager->count; i++)
+    swcMemMan temp = *manager;
+    for(int i = manager->count - 1; i >= 0; i--)
     {
+        printf("Hi:%i\n", i);
+        fflush(stdout);
         freeArena(&manager->arenas[i]);
     }
-    free(manager->arenas);
+
+    printf("Hello");
+    fflush(stdout);
+
+    free(temp.arenas);
     return 1;
 }
 
