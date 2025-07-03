@@ -37,7 +37,7 @@ uint32_t findCurScreenNumber(Display *dis)
  * @param config 
  * @return XVisualInfo* 
  */
-XVisualInfo* retVisualT(Display* display, uint32_t* config)
+XVisualInfo* retVisualT(Display* display, GLXFBConfig config)
 {
     uint32_t error_Base, event_Base;
     uint32_t bool = glXQueryExtension(display, &error_Base, &event_Base);
@@ -58,14 +58,13 @@ XVisualInfo* retVisualT(Display* display, uint32_t* config)
  */
 uint64_t glInitWindowT(Display* display, uint32_t* config, swcWin* swc, uint64_t eventMask)
 {
-    
     int count;
-    GLXFBConfig* configs = glXChooseFBConfig(display, 0, config, &count);
+    GLXFBConfig* configs = glXChooseFBConfig(display, 0, config, &count);//TODO: change this to the correct screen
     if(count == 0)
     {
+        printf("No Matching Configs\n");
         return 0;
     }
-
     XVisualInfo* info = retVisualT(display, configs[0]);
 
     if(info == NULL)

@@ -14,8 +14,8 @@
 * define the different layers that the "divs" can be
 * displayed in
 */
-#define farClip = 10
-#define nearClip = 0 
+#define farClip 10
+#define nearClip 0 
 
 typedef struct scissorR {
     uint32_t xL, xR, yT, yB;

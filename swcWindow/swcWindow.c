@@ -4,6 +4,31 @@ uint32_t eventHandler(swcWin* win);
 uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
 
+
+//plz for the love of god delete this
+typedef struct
+{
+    uint32_t sortByThis;
+    uint64_t miscellaneous;
+}fake;
+uint32_t fakeSorter(void* left, void* right)
+{
+    fake *fakel = (fake*)left;
+    fake *faker = (fake*)right;
+    if(fakel->sortByThis < faker->sortByThis) 
+        return 0;
+    if(fakel->sortByThis == faker->sortByThis)
+        return 1;
+    return 2;
+}
+void fakeInsert(void* left, void* right)
+{
+    fake *fakel = (fake*)left;
+    fake *faker = (fake*)right;
+    faker->miscellaneous = fakel->miscellaneous;
+    faker->sortByThis = fakel->sortByThis;
+}
+
 /**
  * @brief Attempts to create and return window based on passed params, pass null to config for default config and mask
  * 
@@ -35,6 +60,26 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     uint32_t windowName = allocNamed(sizeof(swcWin), &manager);
     
+    fflush(stdout);
+
+    swcArrayName array = allocArray(30, sizeof(fake), fakeSorter, fakeInsert, &manager);
+
+    fake fakest = {1, 2};
+    fake fakest2 = {2, 2};
+
+    addArray(array, &fakest, &manager);  
+    addArray(array, &fakest2, &manager);
+    addArray(array, &fakest, &manager);
+    fakest.sortByThis = 0;
+    addArray(array, &fakest, &manager);
+
+    swcArray* b = (swcArray*)retrieveName(array, &manager);
+
+    fake *fakest3 = (fake*)(b->data);
+    for(int i = 0; i < 3; i++)
+    {
+
+    }
 
     if(!glInitWindowT(display, config, (swcWin*)retrieveName(windowName, &manager), eventMask))
     {
@@ -49,6 +94,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
+
 
     desWindow((swcWin*)retrieveName(windowName, &manager));
     return null;

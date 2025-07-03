@@ -89,12 +89,38 @@ typedef struct {
 }swcMemMan;
 
 /**
- * @brief This is an array of names, which in itself is just an array that holds a current size (cur element count) at the start of the array,
- * this is just meant to be used for names that contain other names for reference, suppossing that they are mostly initialized and added to 
- * with single values at a time,
+ * @brief This is an array, classic java style, data is stored in various
+ * locations because of the less array style of a name, refer to swcArray for
+ * how data is stored
  */
-typedef uint32_t swcNameArray;
+typedef uint32_t swcArrayName;
 //im kind of sick and twisted, bald man
+
+/**
+ * @brief Return 0 if Left is Less Than Right, 1 if Equal, 2 if More Than
+ */
+typedef uint32_t(*sortFunc)(void*, void*);
+
+/**
+ * @brief Assign Left Value Into Right Value...
+ */
+typedef void(*assigner)(void*, void*);
+
+/**
+ * @brief currently completely theoretical, I wont actually be using this, but
+ * all this information will be contained in an array, just it will be accessed, actually
+ * what am i talking about, I will use this structure to access the data
+ * 
+ * No Duplicates are ALLOWED
+ */
+typedef struct
+{
+    uint32_t curSize;
+    size_t dataSize;
+    sortFunc sorter;
+    assigner assigner;
+    char data[];
+}swcArray;
 
 /**
  * @brief This is a container that holds the association between X window events and swcWindow event handlers. an X window event can have
@@ -134,9 +160,9 @@ typedef struct {
  */
 
 typedef struct {
-    uint32_t programName;
-    swcNameArray divsName;
     char pathName[256];
+    uint32_t programName;
+    swcArray divsName;
 }ProgramToDiv;
 
 /**
@@ -152,7 +178,7 @@ typedef struct {
     glFuncPointers glPointers;
     GLXContext glContext;
     GLXWindow glWindow;
-    uint32_t glProgramGroups;//array of ProgramToDiv
+    swcArrayName glProgramGroups;//array of ProgramToDiv
     /*
     * Okay What we have run into is we need mass allocation of dynamic memory
     * the option that im going to take is arena memory allocation, which means

@@ -454,7 +454,7 @@ int shaderCreatorAssignerDestroyer(const char* file, int type)
     printf("File\n%s\n", shadSource);
 
     fclose(File);
-    sigShaderSource(shader, 1, &shadSource, 0);
+    sigShaderSource(shader, 1, (const GLchar**)&shadSource, 0);
     sigCompileShader(shader);
     
     //maybe errors in compilation are causing my issues

@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     //     return 0;
     // }
 
-    printf("mapping should start");
+    printf("mapping should start\n");
     // return 0;
 
     initWindow(defConfiguration, defMask, 0, 0, 200, 200);

@@ -267,7 +267,7 @@ uint32_t deallocNamed(uint32_t name, swcMemMan* manager)
  */
 uint32_t reallocNamed(uint32_t name, uint32_t newSize, swcMemMan* manager, swcName* swcN)
 {
-    swcName* swcName = retrieveName(name, manager);
+    swcName* swcName = retrieveNameL(name, manager);
     if(swcName == NULL)
     {
         return 0;
@@ -303,70 +303,95 @@ uint32_t reallocNamed(uint32_t name, uint32_t newSize, swcMemMan* manager, swcNa
 }
 
 /**
- * @brief Creates a Name Array, memory size = (size + 1) * sizeof(uint32_t)
+ * @brief Creates an Array, memory size = (size) * dataSize + sizeof(uint32_t) + sizeof(size_t) + sizeof(uintptr_t)
  * 
- * @param size The Initial amount of name storage needed
+ * @param size Elements needed
+ * @param dataSize Size of each element
+ * @param sorter Function to sort each element with
+ * @param assigner Function to assign to an element too
  * @param manager 
  * @return swcNameArray 
  */
-swcNameArray allocNameArray(uint32_t size, swcMemMan* manager)
+swcArrayName allocArray(uint32_t size, size_t dataSize, sortFunc sorter, assigner assigner, swcMemMan* manager)
 {
-    swcNameArray ret = allocNamed((size + 1) * sizeof(uint32_t), manager);
+    swcArrayName ret = allocNamed(size * dataSize + sizeof(uint32_t) + sizeof(size_t) + sizeof(uintptr_t), manager);
+    swcName *arrayName = retrieveNameL(ret, manager);
+    swcArray *array = (swcArray*)(arrayName->pointer);
+    array->curSize = 0;
+    array->dataSize = dataSize;
+    array->sorter = sorter;
+    array->assigner = assigner;
     return ret; //hhmmmmm
 }
 /**
  * @brief Adds a value to name array checks to see if value has been added before... only single instances in this array
  * uses basic sorting algo to find if name has been added
  * 
- * @param array nameArray
+ * @param arrayName Array name
  * @param name Name to add to Name array
  * @param manager 
  * @return 0 if Failed | 1 if Success (Failure can Occur for Name Array not Existing, Memory Overload, Name Already Existing)
  */
-uint32_t addNameArray(swcNameArray array, uint32_t name, swcMemMan* manager)
+uint32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager)
 {
-    swcName* nameArray = retrieveName(array, manager);
+
+    swcName* nameArray = retrieveNameL(arrayName, manager);
     if(nameArray == NULL)
     {
         return 0;
     }
-    int32_t sizeAr = *(uint32_t*)nameArray->pointer;
+    swcArray *array = (swcArray*)nameArray->pointer;
     
-    uint32_t *names = (uint32_t*)((uintptr_t)(nameArray->pointer) + sizeof(uint32_t));
+    int32_t sizeAr = (int32_t)array->curSize;
+
+    if(array->curSize == 0)
+    {
+        array->assigner(data, (void*)array->data);
+        array->curSize++;
+        return 1;
+    }
+    uint32_t dataSize = array->dataSize;
+    sortFunc sorter = array->sorter;
+    char* arrayData = array->data; 
+    
     uint32_t i = sizeAr >> 1;
-    uint32_t c = i;
+    uint32_t c = i != 0 ? i : 1;
+    uint32_t check = 0;
+    uint32_t breakUpon = 0;
     while(1)
     {
+        breakUpon++;
         if(c != 1)
         {
             c >>= 1;
         }
         if(i != 0)
         {
-            if(names[i - 1] > name)
+            if(!sorter(data, (void*)(arrayData + (dataSize * (i - 1)))))
             {
                 i -= c;
                 continue;
             }
-            if(names[i - 1] == name)
+            if(sorter(data, (void*)(arrayData + (dataSize * (i - 1)))) == 1)
             {
                 return 1;
             }
         }
         if(i <= sizeAr - 1)
         {
-            if(names[i] < name)
+            if(!sorter((void*)(arrayData + dataSize * i), data))
             {
                 i += c;
                 continue;
             }
-            if(names[i] == name)
+            if(sorter((void*)(arrayData + dataSize * i),data) == 1)
             {
                 return 1;
             }
         }
         break;
     }
+
 
     if(sizeAr == (((uint32_t)(nameArray->size)) / (uint32_t)sizeof(uint32_t)) - 1)
     {
@@ -377,80 +402,79 @@ uint32_t addNameArray(swcNameArray array, uint32_t name, swcMemMan* manager)
             return 0;
         }
     }
-    *(--names) = sizeAr + 1;
-    *(names++);
-    while(sizeAr < i)
+    array->curSize++;
+    while(sizeAr > (int64_t)i)
     {
-        names[sizeAr] = names[sizeAr - 1];
+        array->assigner((void*)(arrayData + ((sizeAr - 1) * dataSize)), (void*)(arrayData + (sizeAr * dataSize)));
         sizeAr--;
     }
-    names[i] = name;
+    array->assigner(data,(void*)(arrayData + i * dataSize));
     return 1;
 }
 
-/**
- * @brief 
- * 
- * @param array NameArray
- * @param name Name to Remove from NameArray
- * @param manager 
- * @return 0 if Failed | 1 if Success (Failure Can Occur due to NameArray Not Existing and Name Not Existing Within Name Array)
- */
-uint32_t removeNameArray(swcNameArray array, uint32_t name, swcMemMan* manager)
-{
-    swcName* nameArray = retrieveName(array, manager);
-    if(nameArray == NULL)
-    {
-        return 0;
-    }
-    int32_t sizeAr = *(uint32_t*)nameArray->pointer;
+// /**
+//  * @brief 
+//  * 
+//  * @param array NameArray
+//  * @param name Name to Remove from NameArray
+//  * @param manager 
+//  * @return 0 if Failed | 1 if Success (Failure Can Occur due to NameArray Not Existing and Name Not Existing Within Name Array)
+//  */
+// uint32_t removeNameArray(swcNameArray array, uint32_t name, swcMemMan* manager)
+// {
+//     swcName* nameArray = retrieveName(array, manager);
+//     if(nameArray == NULL)
+//     {
+//         return 0;
+//     }
+//     int32_t sizeAr = *(uint32_t*)nameArray->pointer;
     
-    uint32_t *names = (uint32_t*)((uintptr_t)nameArray->pointer + sizeof(uint32_t));
-    uint32_t i = sizeAr >> 1;
-    uint32_t c = i;
-    while(1)
-    {
-        if(c != 1)
-        {
-            c >>= 1;
-        }
-        if(i != 0)
-        {
-            if(names[i - 1] > name)
-            {
-                i -= c;
-                continue;
-            }
-            if(names[i - 1] == name)
-            {
-                i--;
-                break;
-            }
-        }
-        if(i <= sizeAr - 1)
-        {
-            if(names[i] < name)
-            {
-                i += c;
-                continue;
-            }
-            if(names[i] == name)
-            {
-                break;
-            }
-        }
-        return 0;
-    }
-    sizeAr--;
-    while(i < sizeAr)
-    {
-        names[i] = names[i + 1];
-        i++;
-    }
-    names[sizeAr] = 0;
-    *(--names) = sizeAr;
-    return 1;
-}
+//     uint32_t *names = (uint32_t*)((uintptr_t)nameArray->pointer + sizeof(uint32_t));
+//     uint32_t i = sizeAr >> 1;
+//     uint32_t c = i;
+//     while(1)
+//     {
+//         if(c != 1)
+//         {
+//             c >>= 1;
+//         }
+//         if(i != 0)
+//         {
+//             if(names[i - 1] > name)
+//             {
+//                 i -= c;
+//                 continue;
+//             }
+//             if(names[i - 1] == name)
+//             {
+//                 i--;
+//                 break;
+//             }
+//         }
+//         if(i <= sizeAr - 1)
+//         {
+//             if(names[i] < name)
+//             {
+//                 i += c;
+//                 continue;
+//             }
+//             if(names[i] == name)
+//             {
+//                 break;
+//             }
+//         }
+//         return 0;
+//     }
+//     sizeAr--;
+//     while(i < sizeAr)
+//     {
+//         names[i] = names[i + 1];
+//         i++;
+//     }
+//     names[sizeAr] = 0;
+//     *(--names) = sizeAr;
+//     return 1;
+// }
 
 
 /**

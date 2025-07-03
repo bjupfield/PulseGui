@@ -10,7 +10,7 @@
 
 uint32_t findCurScreenNumber(Display *dis);
 
-XVisualInfo* retVisualT(Display* display, uint32_t* config);
+XVisualInfo* retVisualT(Display* display, GLXFBConfig config);
 
 uint64_t glInitWindowT(Display* display, uint32_t* config, swcWin* swc, uint64_t eventMask);
 
