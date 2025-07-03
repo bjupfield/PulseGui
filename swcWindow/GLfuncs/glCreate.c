@@ -47,48 +47,56 @@ XVisualInfo* retVisualT(Display* display, uint32_t* config)
         return NULL;
     }
 
-    uint32_t count;
-    GLXFBConfig* configs = glXChooseFBConfig(display, 0, config, &count);
-    if(count == 0)
-    {
-        return NULL;
-    }
-
-    return glXGetVisualFromFBConfig(display, configs[0]);
+    return glXGetVisualFromFBConfig(display, config);
 }
 /**
- * @brief Rets Zero if Fail, else returns handle to window association
+ * @brief Rets Zero if Fail, else returns 1
  * 
  * @param display 
  * @param win 
  * @return uint64_t 
  */
-// uint64_t glInitWindow(Display* display, Window win)
-// {
-//     GLXWindow window = glXCreateWindow(display, initConfig, win, NULL);
-//     GLXContext cont = glXCreateNewContext(display, initConfig,  GLX_RGBA_TYPE, NULL, True);
+uint64_t glInitWindowT(Display* display, uint32_t* config, swcWin* swc, uint64_t eventMask)
+{
+    
+    int count;
+    GLXFBConfig* configs = glXChooseFBConfig(display, 0, config, &count);
+    if(count == 0)
+    {
+        return 0;
+    }
 
-//     if(window == NULL || cont == NULL)
-//     {
-//         return 0;
-//     }
+    XVisualInfo* info = retVisualT(display, configs[0]);
 
-//     if(!funcsBound)
-//     {
-//         retrieveFuncs();
-//         funcsBound = 1;
-//         //TODO: make memory allocation size choosen by the application
-//         wins = (contextWinAssociation*)malloc(sizeof(wins) * 512);
-//         winsSize = 512;
+    if(info == NULL)
+    {
+        //no matching configs...
+        return 0;
+    }
 
-//         wins->context = cont;
-//         wins->win = window;
-//         wins->name = 1;
-//         winCount++;
-//     }
 
-//     return winCount;
-// }
+    XSetWindowAttributes wa = {
+		.override_redirect = False,
+  		//.background_pixmap = ParentRelative,
+		.event_mask = (config == 0 ? defMask : eventMask),
+		.background_pixel = BlackPixel(display, 0),
+        .colormap = XCreateColormap(display, RootWindow(display, 0), info->visual, AllocNone),
+	};
+
+    swc->mainWin = XCreateWindow(
+        display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
+        info->depth, CopyFromParent, info->visual, 
+        CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa);
+
+    swc->glWindow = glXCreateWindow(display, configs[0], swc->mainWin, NULL);
+    swc->glContext = glXCreateNewContext(display, configs[0],  GLX_RGBA_TYPE, NULL, True);
+    retrieveGLFuncs(swc);
+
+    XFree(configs);
+
+    return 1;
+
+}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 //this is the first time I've actually used a macro

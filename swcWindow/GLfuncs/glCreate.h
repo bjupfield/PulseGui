@@ -12,7 +12,7 @@ uint32_t findCurScreenNumber(Display *dis);
 
 XVisualInfo* retVisualT(Display* display, uint32_t* config);
 
-uint64_t glInitWindow(Display* display, Window win);
+uint64_t glInitWindowT(Display* display, uint32_t* config, swcWin* swc, uint64_t eventMask);
 
 uint32_t retrieveGLFuncs(swcWin *win);
 

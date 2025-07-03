@@ -68,7 +68,6 @@ typedef struct swcName {
 }swcName;
 
 
-
 /**
  * @brief Memory Manager 
  * 
@@ -90,6 +89,14 @@ typedef struct {
 }swcMemMan;
 
 /**
+ * @brief This is an array of names, which in itself is just an array that holds a current size (cur element count) at the start of the array,
+ * this is just meant to be used for names that contain other names for reference, suppossing that they are mostly initialized and added to 
+ * with single values at a time,
+ */
+typedef uint32_t swcNameArray;
+//im kind of sick and twisted, bald man
+
+/**
  * @brief This is a container that holds the association between X window events and swcWindow event handlers. an X window event can have
  * handleToEventCount handles associated with it. The Handle container is of size ((4 + handletoevent * 4) * eventGroup count). The first
  * 4 bytes of each region is the event/mask, the rest of the bytes are the name of the event that are associated with said event/mask,
@@ -106,7 +113,13 @@ typedef struct {
 struct funcHandleArrays{
     uintptr_t func;
     uint32_t divsName;
+    //TODO: add func that deletes div names in this container
+    //TODO: make divsName a swcNameArray
 };
+/**
+ * @brief Holds events, honestly i don't really know what this is doing to be honest
+ * 
+ */
 typedef struct {
     uint32_t eventGroupCount;
     uint32_t handleToEventCount;
@@ -114,28 +127,32 @@ typedef struct {
     struct funcHandleArrays funcHandles[];
 }evntGroup;
 
+
 /**
- * @brief Container for event handlers. Handle is the function pointer, divNames are the names of the div associated with the
- * function pointer
+ * @brief Container defining the programs linked and the divs linked to them, is used, element pathname is used to not redeclare the same program, and to assign 
+ * 
+ */
+
+typedef struct {
+    uint32_t programName;
+    swcNameArray divsName;
+    char pathName[256];
+}ProgramToDiv;
+
+/**
+ * @brief This is the Window...
  * 
  */
 typedef struct {
-    uintptr_t handle;
-    uint32_t divNames[]; 
-}eventHandle;
-
-
-
-typedef struct {
     Display* dis;
     Window mainWin;
-    uint32_t programGroupCount;
-    uint32_t* groupCounts;
     uint32_t event_mask;
     uint32_t eventGroups;//name for eventGroup struct
     swcMemMan* manager;
     glFuncPointers glPointers;
-
+    GLXContext glContext;
+    GLXWindow glWindow;
+    uint32_t glProgramGroups;//array of ProgramToDiv
     /*
     * Okay What we have run into is we need mass allocation of dynamic memory
     * the option that im going to take is arena memory allocation, which means

@@ -27,100 +27,82 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //      Set ErrorHandler
     //      XSetErrorHandler(errorHandler);
 
-    XVisualInfo* info = retVisualT(display, config == 0 ? defConfiguration: config);
 
-    if(info == NULL)
-    {
-        return null;
-    }
-
-    //No Choice on Background or Colormap
-    XSetWindowAttributes wa = {
-		.override_redirect = False,
-  		//.background_pixmap = ParentRelative,
-		.event_mask = (config == 0 ? defMask : eventMask),
-		.background_pixel = BlackPixel(display, 0),
-        .colormap = XCreateColormap(display, RootWindow(display, 0), info->visual, AllocNone),
-	};
 
     swcMemMan manager = createMan(40, 20000, 50000, 25000);
 
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
 
     uint32_t windowName = allocNamed(sizeof(swcWin), &manager);
+    
 
-    ((swcWin*)retrieveName(windowName, &manager))->mainWin = XCreateWindow(
-                display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
-                info->depth, CopyFromParent, info->visual, 
-		        CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa);
-
+    if(!glInitWindowT(display, config, (swcWin*)retrieveName(windowName, &manager), eventMask))
+    {
+        //failed to initialize gl stuff
+        return null;
+    }
 
     ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
-
 
     ((swcWin*)retrieveName(windowName, &manager))->dis = display;
     ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
 
-    retrieveGLFuncs((swcWin*)retrieveName(windowName, &manager));
+    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
+    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
 
-    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
-    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
-    // // XDestroyWindow(((swcWin*)retrieveName(windowName, &manager))->dis, ((swcWin*)retrieveName(windowName, &manager))->mainWin);
-    // // freeMemMan(manager);
     desWindow((swcWin*)retrieveName(windowName, &manager));
-    // // freeMemMan(manager);
+    return null;
 
-    swcWin win = {
-        .mainWin = XCreateWindow(
-        display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
-        info->depth, CopyFromParent, info->visual, 
-		CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa),
-    };
+    // swcWin win = {
+    //     .mainWin = XCreateWindow(
+    //     display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
+    //     info->depth, CopyFromParent, info->visual, 
+	// 	CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa),
+    // };
 
-    XFree(info);
+    // XFree(info);
 
-    win.dis = display;
-
-
-    //in.glHandle = glInitWindow(win.dis, win.mainWin);
-
-    //printf(win.glHandle == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n");
-    XMapWindow(win.dis, win.mainWin);
-    // XFlush(win.dis);
-
-    manager = createMan(sizeof(swcDiv) * 5000, 10, 50000, 25000);
-
-    win.manager = &manager;
-
-    addArena(sizeof(swcDiv) * 2000, sizeof(swcDiv), win.manager);
-
-    win.eventGroups = initEventGroups(&win, eventMask, 40);
-
-    //for testing divs?
-    uint32_t divName = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
-    uint32_t di = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
+    // win.dis = display;
 
 
-    swcDiv *div = retrieveName(divName, win.manager);
+    // //in.glHandle = glInitWindow(win.dis, win.mainWin);
 
-    printf("\n\ndiv.posx: %i\n\n", div->posx);
+    // //printf(win.glHandle == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n");
+    // XMapWindow(win.dis, win.mainWin);
+    // // XFlush(win.dis);
 
-    // EVENT HANDLER
+    // manager = createMan(sizeof(swcDiv) * 5000, 10, 50000, 25000);
+
+    // win.manager = &manager;
+
+    // addArena(sizeof(swcDiv) * 2000, sizeof(swcDiv), win.manager);
+
+    // win.eventGroups = initEventGroups(&win, eventMask, 40);
+
+    // //for testing divs?
+    // uint32_t divName = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
+    // uint32_t di = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
 
 
-    for(uint64_t i = 0; i < 20000; i++)
-    {
-        handleEvents(&win);
-        frameChange(win.manager);
+    // swcDiv *div = retrieveName(divName, win.manager);
 
-    }
+    // printf("\n\ndiv.posx: %i\n\n", div->posx);
+
+    // // EVENT HANDLER
+
+    // for(uint64_t i = 0; i < 20000; i++)
+    // {
+    //     handleEvents(&win);
+    //     frameChange(win.manager);
+
+    // }
     //DRAWER
 
 
     //remove dummy
-    desWindow(&win);
+    // desWindow(&win);
 
-    return win;
+    // return win;
 }
 
 uint32_t desWindow(swcWin* win)

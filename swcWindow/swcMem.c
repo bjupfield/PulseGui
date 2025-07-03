@@ -175,6 +175,8 @@ void *allocM(size_t size, swcMemMan *manager)
 uint32_t allocNamed(size_t size, swcMemMan* manager)
 {
     void* data = allocM(size, manager);
+
+    //TODO: account for null return...
     
 
 
@@ -253,6 +255,205 @@ uint32_t deallocNamed(uint32_t name, swcMemMan* manager)
 }
 
 /**
+ * @brief reallocates a name to the size newsize, if size is less than current size the only change is the size parameter on the name struct, if greater than checks
+ * to see if the name is at the end of allocated data currently, if so expands the data allocated to name if possible, if not allocates a new memory location to name
+ * and copies the data over, and expands the size
+ * 
+ * @param name 
+ * @param newSize New Size for Name
+ * @param manager 
+ * @param swcN I don't see a situation you call this func without having this too
+ * @return 1 Upon Success | 0 Upon Failure 
+ */
+uint32_t reallocNamed(uint32_t name, uint32_t newSize, swcMemMan* manager, swcName* swcN)
+{
+    swcName* swcName = retrieveName(name, manager);
+    if(swcName == NULL)
+    {
+        return 0;
+    }
+    swcN = swcName;
+    if(swcName->size >= newSize)
+    {
+        swcName->size = newSize;
+        return 1;
+    }
+    swcArena* a = &manager->arenas[manager->count - 1];
+    if(a->beg == (swcName->pointer + (size_t)(swcName->size)))
+    {
+        //this was the last name "added" to the arena, attempt to expand name
+        if((uint32_t)(a->end - a->beg) >= newSize - swcName->size)
+        {
+            a->beg += (sizeof(char) * (newSize - swcName->size));
+            swcName->size = newSize;
+            return 1;
+        }
+    }
+    
+    void* newPointer = allocM(newSize, manager);
+    if(newPointer == NULL)
+    {
+        return 0;
+    }
+    swcName->pointer = newPointer;
+    swcName->size = newSize;
+    return 1;
+    
+
+}
+
+/**
+ * @brief Creates a Name Array, memory size = (size + 1) * sizeof(uint32_t)
+ * 
+ * @param size The Initial amount of name storage needed
+ * @param manager 
+ * @return swcNameArray 
+ */
+swcNameArray allocNameArray(uint32_t size, swcMemMan* manager)
+{
+    swcNameArray ret = allocNamed((size + 1) * sizeof(uint32_t), manager);
+    return ret; //hhmmmmm
+}
+/**
+ * @brief Adds a value to name array checks to see if value has been added before... only single instances in this array
+ * uses basic sorting algo to find if name has been added
+ * 
+ * @param array nameArray
+ * @param name Name to add to Name array
+ * @param manager 
+ * @return 0 if Failed | 1 if Success (Failure can Occur for Name Array not Existing, Memory Overload, Name Already Existing)
+ */
+uint32_t addNameArray(swcNameArray array, uint32_t name, swcMemMan* manager)
+{
+    swcName* nameArray = retrieveName(array, manager);
+    if(nameArray == NULL)
+    {
+        return 0;
+    }
+    int32_t sizeAr = *(uint32_t*)nameArray->pointer;
+    
+    uint32_t *names = (uint32_t*)((uintptr_t)(nameArray->pointer) + sizeof(uint32_t));
+    uint32_t i = sizeAr >> 1;
+    uint32_t c = i;
+    while(1)
+    {
+        if(c != 1)
+        {
+            c >>= 1;
+        }
+        if(i != 0)
+        {
+            if(names[i - 1] > name)
+            {
+                i -= c;
+                continue;
+            }
+            if(names[i - 1] == name)
+            {
+                return 1;
+            }
+        }
+        if(i <= sizeAr - 1)
+        {
+            if(names[i] < name)
+            {
+                i += c;
+                continue;
+            }
+            if(names[i] == name)
+            {
+                return 1;
+            }
+        }
+        break;
+    }
+
+    if(sizeAr == (((uint32_t)(nameArray->size)) / (uint32_t)sizeof(uint32_t)) - 1)
+    {
+        //need to expand namearray
+        if(!reallocNamed(nameArray->name, (uint32_t)((_Float32)nameArray->size * (_Float32)nameArrayReallocSize), manager, nameArray))
+        {
+            //TODO: handle memory overload.... explode for now
+            return 0;
+        }
+    }
+    *(--names) = sizeAr + 1;
+    *(names++);
+    while(sizeAr < i)
+    {
+        names[sizeAr] = names[sizeAr - 1];
+        sizeAr--;
+    }
+    names[i] = name;
+    return 1;
+}
+
+/**
+ * @brief 
+ * 
+ * @param array NameArray
+ * @param name Name to Remove from NameArray
+ * @param manager 
+ * @return 0 if Failed | 1 if Success (Failure Can Occur due to NameArray Not Existing and Name Not Existing Within Name Array)
+ */
+uint32_t removeNameArray(swcNameArray array, uint32_t name, swcMemMan* manager)
+{
+    swcName* nameArray = retrieveName(array, manager);
+    if(nameArray == NULL)
+    {
+        return 0;
+    }
+    int32_t sizeAr = *(uint32_t*)nameArray->pointer;
+    
+    uint32_t *names = (uint32_t*)((uintptr_t)nameArray->pointer + sizeof(uint32_t));
+    uint32_t i = sizeAr >> 1;
+    uint32_t c = i;
+    while(1)
+    {
+        if(c != 1)
+        {
+            c >>= 1;
+        }
+        if(i != 0)
+        {
+            if(names[i - 1] > name)
+            {
+                i -= c;
+                continue;
+            }
+            if(names[i - 1] == name)
+            {
+                i--;
+                break;
+            }
+        }
+        if(i <= sizeAr - 1)
+        {
+            if(names[i] < name)
+            {
+                i += c;
+                continue;
+            }
+            if(names[i] == name)
+            {
+                break;
+            }
+        }
+        return 0;
+    }
+    sizeAr--;
+    while(i < sizeAr)
+    {
+        names[i] = names[i + 1];
+        i++;
+    }
+    names[sizeAr] = 0;
+    *(--names) = sizeAr;
+    return 1;
+}
+
+
+/**
  * @brief Retrieves named pointer, if name is deallocated or does not exist
  * returns nullptr
  * 
@@ -282,18 +483,14 @@ swcName* retrieveNameL(uint32_t name, swcMemMan* manager)
  */
 uint32_t freeMemMan(swcMemMan* manager)
 {
-    swcMemMan temp = *manager;
     for(int i = manager->count - 1; i >= 0; i--)
     {
-        printf("Hi:%i\n", i);
-        fflush(stdout);
         freeArena(&manager->arenas[i]);
     }
-
-    printf("Hello");
-    fflush(stdout);
-
-    free(temp.arenas);
+    freeArena(&manager->doubleBuffer1);
+    freeArena(&manager->doubleBuffer2);
+    freeArena(&manager->singleBuffer);
+    free(manager->arenas);
     return 1;
 }
 
