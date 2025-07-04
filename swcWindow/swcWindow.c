@@ -72,13 +72,15 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     addArray(array, &fakest, &manager);
     fakest.sortByThis = 0;
     addArray(array, &fakest, &manager);
+    removeArray(array, &fakest2, &manager);
+
 
     swcArray* b = (swcArray*)retrieveName(array, &manager);
 
     fake *fakest3 = (fake*)(b->data);
     for(int i = 0; i < 3; i++)
     {
-
+        printf("SortByThisis: %i\n", fakest3[i]);
     }
 
     if(!glInitWindowT(display, config, (swcWin*)retrieveName(windowName, &manager), eventMask))
@@ -274,6 +276,54 @@ uint32_t reallocEvents(swcWin *win)
     return 0;
 }
 
+void* programToDivAssigner(void* assign, void* assignTo);
+uint32_t programToDivSorter(void* left, void* right);
+
+/**
+ * @brief 
+ * 
+ * @param win 
+ * @param initialSize Amount Of Programs to Initialize for
+ * @return Return 0 if Fail | Return 1 if Success
+ */
+uint32_t initProgramGroups(swcWin* win, uint32_t initialSize)
+{
+    win->glProgramGroups = allocArray(initialSize, sizeof(ProgramToDiv), programToDivSorter, programToDivAssigner, win->manager);
+
+    
+}
+
+void* programToDivAssigner(void* assign, void* assignTo)
+{
+    ProgramToDiv *assignP = (ProgramToDiv*)assign;
+    ProgramToDiv *assignT = (ProgramToDiv*)assignTo;
+    assignT->divsName = assignP->divsName;
+    assignT->programName = assignP->programName;
+    uint8_t i = 0;
+    while(assignP->pathName[i] != '\n' && i < 256)
+    {
+        assignT->pathName[i] = assignP->pathName[i];
+        i++;
+    }
+    assignT->pathName[i] = '\n';
+}
+
+uint32_t programToDivSorter(void* left, void* right)
+{
+    ProgramToDiv *leftP = (ProgramToDiv*)left;
+    ProgramToDiv *rightP = (ProgramToDiv*)right;
+    uint8_t i = 0;
+    while(leftP->pathName[i] != rightP->pathName[i] || leftP->pathName[i] == '\n')
+    {
+        i++;
+    }
+    if(leftP->pathName[i] < rightP->pathName[i]) 
+        return 0;
+    if(leftP->pathName[i] == rightP->pathName[i])
+        return 1;
+    return 2;
+
+}
 
 /**
  * @brief UGGHHHH
@@ -335,7 +385,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
  * @return uint32_t || Deleted div name if success if fail 0
  */
 uint32_t delDiv(swcWin* win, uint32_t div)
-{
+{//TODO: remove all references
     uint32_t success = deallocNamed(div, win->manager);
     return success;
 }
@@ -346,7 +396,6 @@ uint32_t delDiv(swcWin* win, uint32_t div)
  * @param win 
  * @return uint32_t 
  */
-uint32_t FAKE = 0;
 uint32_t handleEvents(swcWin* win)
 {
     XEvent event = { 0 };

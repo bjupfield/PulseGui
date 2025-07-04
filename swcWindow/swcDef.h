@@ -146,7 +146,7 @@ struct funcHandleArrays{
  * @brief Holds events, honestly i don't really know what this is doing to be honest
  * 
  */
-typedef struct {
+typedef struct {//TODO: change funchandles to a dynamic pointer or something?
     uint32_t eventGroupCount;
     uint32_t handleToEventCount;
     uint32_t events[24];//max of 24 eventtypes
