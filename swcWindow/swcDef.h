@@ -116,9 +116,6 @@ typedef void(*assigner)(void*, void*);
 typedef struct
 {
     uint32_t curSize;
-    size_t dataSize;
-    sortFunc sorter;
-    assigner assigner;
     char data[];
 }swcArray;
 
@@ -146,7 +143,7 @@ struct funcHandleArrays{
  * @brief Holds events, honestly i don't really know what this is doing to be honest
  * 
  */
-typedef struct {//TODO: change funchandles to a dynamic pointer or something?
+typedef struct {//TODO: change evnt group to use swcArray
     uint32_t eventGroupCount;
     uint32_t handleToEventCount;
     uint32_t events[24];//max of 24 eventtypes
@@ -162,8 +159,12 @@ typedef struct {//TODO: change funchandles to a dynamic pointer or something?
 typedef struct {
     char pathName[256];
     uint32_t programName;
-    swcArray divsName;
-}ProgramToDiv;
+}programNames;
+
+typedef struct {
+    uint32_t programName;
+    swcArrayName divs;
+}nameToDiv;
 
 /**
  * @brief This is the Window...
@@ -178,7 +179,8 @@ typedef struct {
     glFuncPointers glPointers;
     GLXContext glContext;
     GLXWindow glWindow;
-    swcArrayName glProgramGroups;//array of ProgramToDiv
+    swcArrayName glProgramNames;//array of program names
+    swcArrayName glNamesToDivs;//association of program names to divs
     /*
     * Okay What we have run into is we need mass allocation of dynamic memory
     * the option that im going to take is arena memory allocation, which means
@@ -210,6 +212,7 @@ typedef struct swcDiv{
     uint32_t name;
     uint32_t parent;
     uint32_t children[512];//making this static for now for an easier memory manager, will change eventually if this project expands
+    //TODO: change this
     uint32_t handleGroup;// event func group
     uint32_t posx;
     uint32_t posy;

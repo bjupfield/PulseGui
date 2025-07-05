@@ -16,9 +16,27 @@ uint32_t allocNamed(size_t size, swcMemMan* manager);
 uint32_t deallocNamed(uint32_t name, swcMemMan* manager);
 uint32_t reallocNamed(uint32_t name, uint32_t newSize, swcMemMan* manager, swcName* swcN);
 
-swcArrayName allocArray(uint32_t size, size_t dataSize, sortFunc sorter, assigner assigner, swcMemMan* manager);
-int32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager);
-uint32_t removeArray(swcArrayName arrayName, void* data, swcMemMan* manager);
+// #define procMacro(function, name, reference) \
+//     reference.function = glXGetProcAddressARB((const GLubyte*)name); \
+//     if(function == NULL) \
+//     { \
+//         printf("Failed to load %s", name); \
+//         return 0; \
+//     }
+
+swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager);
+#define swcAllocArray(size, data, manager) \
+        allocArray(size, sizeof(data), &manager); \
+
+int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
+#define swcAddArray(arrayName, data, sorter, manager) \
+        addArray(arrayName, sizeof(typeof(data)), &data, sorter, &manager);
+uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
+#define swcRemoveArray(arrayName, data, sorter, manager) \
+        removeArray(arrayName, sizeof(typeof(data)), &data, sorter, &manager);
+int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
+#define swcContainsArray(arrayName, data, sorter, manager) \
+        containsArray(arrayName, sizeof(typeof(data)), &data, sorter, &manager);
 swcArray* retrieveArray(swcArrayName name, swcMemMan* manager);
 
 void* allocSB(size_t size, swcMemMan* manager);

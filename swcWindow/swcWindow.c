@@ -16,7 +16,9 @@ uint32_t fakeSorter(void* left, void* right)
     fake *fakel = (fake*)left;
     fake *faker = (fake*)right;
     if(fakel->sortByThis < faker->sortByThis) 
+    {
         return 0;
+    }
     if(fakel->sortByThis == faker->sortByThis)
         return 1;
     return 2;
@@ -62,17 +64,19 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     
     fflush(stdout);
 
-    swcArrayName array = allocArray(30, sizeof(fake), fakeSorter, fakeInsert, &manager);
-
     fake fakest = {1, 2};
+
+    // swcArrayName array = allocArray(30, sizeof(fake), fakeSorter, fakeInsert, &manager);
+    swcArrayName array = swcAllocArray(30, fake, manager)
+
     fake fakest2 = {2, 2};
 
-    addArray(array, &fakest, &manager);  
-    addArray(array, &fakest2, &manager);
-    addArray(array, &fakest, &manager);
+    swcAddArray(array, fakest, fakeSorter, manager)
+    swcAddArray(array, fakest2, fakeSorter, manager)
+    swcAddArray(array, fakest, fakeSorter, manager)
     fakest.sortByThis = 0;
-    addArray(array, &fakest, &manager);
-    removeArray(array, &fakest2, &manager);
+    swcAddArray(array, fakest, fakeSorter, manager)
+    // swcRemoveArray(array, fakest2, fakeSorter, manager)
 
 
     swcArray* b = (swcArray*)retrieveName(array, &manager);
@@ -276,8 +280,8 @@ uint32_t reallocEvents(swcWin *win)
     return 0;
 }
 
-void* programToDivAssigner(void* assign, void* assignTo);
-uint32_t programToDivSorter(void* left, void* right);
+uint32_t programNameSorter(void* left, void* right);
+uint32_t nameToDivSorter(void* left, void* right);
 
 /**
  * @brief 
@@ -288,30 +292,36 @@ uint32_t programToDivSorter(void* left, void* right);
  */
 uint32_t initProgramGroups(swcWin* win, uint32_t initialSize)
 {
-    win->glProgramGroups = allocArray(initialSize, sizeof(ProgramToDiv), programToDivSorter, programToDivAssigner, win->manager);
-
-    
+    win->glProgramNames = swcAllocArray(initialSize, programNames, win->manager);
+    win->glNamesToDivs = swcAllocArray(initialSize, nameToDiv, win->manager);
 }
 
-void* programToDivAssigner(void* assign, void* assignTo)
+/**
+ * @brief Checks to see if shader is already compiled and linked, if not creates program and assigns to it, 
+ * else assigns to the already created program group
+ * 
+ * @param divName 
+ * @param pathName 
+ * @param win 
+ * @return 0 if Failure | 1 if Success
+ */
+uint32_t addToProgram(uint32_t divName, const char pathName[256], swcWin* win)
 {
-    ProgramToDiv *assignP = (ProgramToDiv*)assign;
-    ProgramToDiv *assignT = (ProgramToDiv*)assignTo;
-    assignT->divsName = assignP->divsName;
-    assignT->programName = assignP->programName;
-    uint8_t i = 0;
-    while(assignP->pathName[i] != '\n' && i < 256)
+    programNames b;
+    b.pathName = pathName;
+    if(swcContainsArray() != -1)
     {
-        assignT->pathName[i] = assignP->pathName[i];
-        i++;
+        //already exist add to program list 
     }
-    assignT->pathName[i] = '\n';
+    //doesnt do stuff instead :)
+    return 1;
 }
 
-uint32_t programToDivSorter(void* left, void* right)
+
+uint32_t programNameSorter(void* left, void* right)
 {
-    ProgramToDiv *leftP = (ProgramToDiv*)left;
-    ProgramToDiv *rightP = (ProgramToDiv*)right;
+    programNames *leftP = (programNames*)left;
+    programNames *rightP = (programNames*)right;
     uint8_t i = 0;
     while(leftP->pathName[i] != rightP->pathName[i] || leftP->pathName[i] == '\n')
     {
@@ -322,8 +332,19 @@ uint32_t programToDivSorter(void* left, void* right)
     if(leftP->pathName[i] == rightP->pathName[i])
         return 1;
     return 2;
-
 }
+
+uint32_t nameToDivSorter(void* left, void* right)
+{
+    uint32_t *leftN = (uint32_t*)left;
+    uint32_t *rightN = (uint32_t*)right;
+    if(*leftN < *rightN)
+        return 0;
+    if(*leftN == * rightN)
+        return 1;
+    return 2;
+}
+
 
 /**
  * @brief UGGHHHH
@@ -370,6 +391,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
     memcpy((char*)divPoint + sizeof(swcDiv), excData, excSize);
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);
+
 
     // divC(divPoint, onLoad);
 

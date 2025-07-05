@@ -312,16 +312,13 @@ uint32_t reallocNamed(uint32_t name, uint32_t newSize, swcMemMan* manager, swcNa
  * @param manager 
  * @return swcNameArray 
  */
-swcArrayName allocArray(uint32_t size, size_t dataSize, sortFunc sorter, assigner assigner, swcMemMan* manager)
+swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager)
 {
     swcArrayName ret = allocNamed(size * dataSize + sizeof(uint32_t) + sizeof(size_t) + sizeof(uintptr_t), manager);
     
     swcName *arrayName = retrieveNameL(ret, manager);
     swcArray *array = (swcArray*)(arrayName->pointer);
     array->curSize = 0;
-    array->dataSize = dataSize;
-    array->sorter = sorter;
-    array->assigner = assigner;
     return ret; //hhmmmmm
 }
 /**
@@ -332,11 +329,11 @@ swcArrayName allocArray(uint32_t size, size_t dataSize, sortFunc sorter, assigne
  * @param arrayName Array name
  * @param name Name to add to Name array
  * @param manager 
- * @return -1 if Failed | Index if Success (Failure can Occur for Name Array not Existing, Memory Overload, Name Already Existing)
+ * @return -1 if Failed | Index if Success (Failure can Occur for Name Array not Existing, Memory Overload)
  */
-int32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager)
+int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
 {
-
+    
     swcName* nameArray = retrieveNameL(arrayName, manager);
     if(nameArray == NULL)
     {
@@ -348,21 +345,16 @@ int32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager)
 
     if(array->curSize == 0)
     {
-        array->assigner(data, (void*)array->data);
+        memcpy((void*)array->data, data, dataSize);
         array->curSize++;
         return 1;
     }
-    uint32_t dataSize = array->dataSize;
-    sortFunc sorter = array->sorter;
     char* arrayData = array->data; 
     
     uint32_t i = sizeAr >> 1;
     uint32_t c = i != 0 ? i : 1;
-    uint32_t check = 0;
-    uint32_t breakUpon = 0;
     while(1)
     {
-        breakUpon++;
         if(c != 1)
         {
             c >>= 1;
@@ -376,7 +368,7 @@ int32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager)
             }
             if(sorter(data, (void*)(arrayData + (dataSize * (i - 1)))) == 1)
             {
-                return i -1;
+                return i - 1;
             }
         }
         if(i <= sizeAr - 1)
@@ -393,8 +385,6 @@ int32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager)
         }
         break;
     }
-
-
     if(sizeAr == (((uint32_t)(nameArray->size)) / (uint32_t)sizeof(uint32_t)) - 1)
     {
         //need to expand namearray
@@ -407,11 +397,11 @@ int32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager)
     array->curSize++;
     while(sizeAr > (int64_t)i)
     {
-        array->assigner((void*)(arrayData + ((sizeAr - 1) * dataSize)), (void*)(arrayData + (sizeAr * dataSize)));
+        memcpy((void*)(arrayData + (sizeAr * dataSize)), (void*)(arrayData + ((sizeAr - 1) * dataSize)), dataSize);
         sizeAr--;
     }
-    array->assigner(data,(void*)(arrayData + i * dataSize));
-    return 1;
+    memcpy((void*)(arrayData + i * dataSize), data, dataSize);
+    return i;
 }
 
 /**
@@ -422,7 +412,7 @@ int32_t addArray(swcArrayName arrayName, void* data, swcMemMan* manager)
  * @param manager 
  * @return 0 if Failed | 1 if Success (Failure Can Occur due to NameArray Not Existing and Name Not Existing Within Name Array)
  */
-uint32_t removeArray(swcArrayName arrayName, void* data, swcMemMan* manager)
+uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
 {
 
     swcName* nameArray = retrieveNameL(arrayName, manager);
@@ -433,12 +423,7 @@ uint32_t removeArray(swcArrayName arrayName, void* data, swcMemMan* manager)
     swcArray *array = (swcArray*)nameArray->pointer;
 
     int32_t sizeAr = (int32_t)array->curSize;
-
-    // int32_t sizeAr = (int32_t)array->curSize;
-
-    sortFunc sorter = array->sorter;
     char* arrayData = array->data;
-    uint32_t dataSize = array->dataSize; 
 
     uint32_t i = sizeAr >> 1;
     uint32_t c = i != 0 ? i : 1;
@@ -478,14 +463,73 @@ uint32_t removeArray(swcArrayName arrayName, void* data, swcMemMan* manager)
     sizeAr--;
     while(i < sizeAr)
     {
-        array->assigner((void*)(arrayData + ((i + 1) * dataSize)), (void*)(arrayData + (i * dataSize)));
+        memcpy((void*)(arrayData + (i * dataSize)), (void*)(arrayData + ((i) * dataSize)), dataSize);
         i++;
     }
     return 1;
 }
 
 /**
- * @brief Returns ArrayName if it exist, else return 0
+ * @brief Finds if array contains value
+ * 
+ * @param arrayName 
+ * @param dataSize 
+ * @param data 
+ * @param sorter 
+ * @param manager 
+ * @return -1 if Not or Failure | Index if Success
+ */
+int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
+{
+    swcName* nameArray = retrieveNameL(arrayName, manager);
+    if(nameArray == NULL)
+    {
+        return -1;
+    }
+    swcArray *array = (swcArray*)nameArray->pointer;
+
+    int32_t sizeAr = (int32_t)array->curSize;
+    char* arrayData = array->data;
+
+    uint32_t i = sizeAr >> 1;
+    uint32_t c = i != 0 ? i : 1;
+    while(1)
+    {
+        if(c != 1)
+        {
+            c >>= 1;
+        }
+        if(i != 0)
+        {
+            if(!sorter(data, (void*)(arrayData + (dataSize * (i - 1)))))
+            {
+                i -= c;
+                continue;
+            }
+            if(sorter(data, (void*)(arrayData + (dataSize * (i - 1)))) == 1)
+            {
+                return i - 1;
+                break;
+            }
+        }
+        if(i <= sizeAr - 1)
+        {
+            if(!sorter((void*)(arrayData + dataSize * i), data))
+            {
+                i += c;
+                continue;
+            }
+            if(sorter((void*)(arrayData + dataSize * i), data) == 1)
+            {
+                return i;
+                break;
+            }
+        }
+        return -1;
+    }
+}
+/**
+ * @brief Returns Array if it exist, else return 0
  * 
  * @param name SwcArrayName
  * @param manager 
