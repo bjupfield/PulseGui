@@ -329,15 +329,15 @@ swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager)
  * @param arrayName Array name
  * @param name Name to add to Name array
  * @param manager 
- * @return -1 if Failed | Index if Success (Failure can Occur for Name Array not Existing, Memory Overload)
+ * @return 0 if Failed | Pointer of Added Or Found if Success (Failure can Occur for Name Array not Existing, Memory Overload)
  */
-int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
+void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
 {
     
     swcName* nameArray = retrieveNameL(arrayName, manager);
     if(nameArray == NULL)
     {
-        return -1;
+        return 0;
     }
     swcArray *array = (swcArray*)nameArray->pointer;
     
@@ -347,7 +347,7 @@ int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc
     {
         memcpy((void*)array->data, data, dataSize);
         array->curSize++;
-        return 1;
+        return (void*)array->data;
     }
     char* arrayData = array->data; 
     
@@ -368,7 +368,7 @@ int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc
             }
             if(sorter(data, (void*)(arrayData + (dataSize * (i - 1)))) == 1)
             {
-                return i - 1;
+                return (void*)(arrayData + (i - 1) * dataSize);
             }
         }
         if(i <= sizeAr - 1)
@@ -380,7 +380,7 @@ int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc
             }
             if(sorter((void*)(arrayData + dataSize * i),data) == 1)
             {
-                return i;
+                return (void*)(arrayData + i * dataSize);
             }
         }
         break;
@@ -391,7 +391,7 @@ int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc
         if(!reallocNamed(nameArray->name, (uint32_t)((_Float32)nameArray->size * (_Float32)nameArrayReallocSize), manager, nameArray))
         {
             //TODO: handle memory overload.... explode for now
-            return -1;
+            return 0;
         }
     }
     array->curSize++;
@@ -401,7 +401,7 @@ int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc
         sizeAr--;
     }
     memcpy((void*)(arrayData + i * dataSize), data, dataSize);
-    return i;
+    return (void*)(arrayData + i * dataSize);
 }
 
 /**

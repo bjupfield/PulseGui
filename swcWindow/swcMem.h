@@ -26,17 +26,17 @@ uint32_t reallocNamed(uint32_t name, uint32_t newSize, swcMemMan* manager, swcNa
 
 swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager);
 #define swcAllocArray(size, data, manager) \
-        allocArray(size, sizeof(data), &manager); \
+        allocArray(size, sizeof(data), manager); \
 
-int32_t addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
+void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
 #define swcAddArray(arrayName, data, sorter, manager) \
-        addArray(arrayName, sizeof(typeof(data)), &data, sorter, &manager);
+        addArray(arrayName, sizeof(typeof(data)), &data, sorter, manager);
 uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
 #define swcRemoveArray(arrayName, data, sorter, manager) \
-        removeArray(arrayName, sizeof(typeof(data)), &data, sorter, &manager);
+        removeArray(arrayName, sizeof(typeof(data)), &data, sorter, manager);
 int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
 #define swcContainsArray(arrayName, data, sorter, manager) \
-        containsArray(arrayName, sizeof(typeof(data)), &data, sorter, &manager);
+        containsArray(arrayName, sizeof(typeof(data)), &data, sorter, manager)
 swcArray* retrieveArray(swcArrayName name, swcMemMan* manager);
 
 void* allocSB(size_t size, swcMemMan* manager);

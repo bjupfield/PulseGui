@@ -3,6 +3,7 @@
 uint32_t eventHandler(swcWin* win);
 uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
+uint32_t initProgramGroups(swcWin* win, uint32_t initialSize);
 
 
 //plz for the love of god delete this
@@ -67,16 +68,16 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     fake fakest = {1, 2};
 
     // swcArrayName array = allocArray(30, sizeof(fake), fakeSorter, fakeInsert, &manager);
-    swcArrayName array = swcAllocArray(30, fake, manager)
+    swcArrayName array = swcAllocArray(30, fake, &manager)
 
     fake fakest2 = {2, 2};
 
-    swcAddArray(array, fakest, fakeSorter, manager)
-    swcAddArray(array, fakest2, fakeSorter, manager)
-    swcAddArray(array, fakest, fakeSorter, manager)
+    swcAddArray(array, fakest, fakeSorter, &manager)
+    swcAddArray(array, fakest2, fakeSorter, &manager)
+    swcAddArray(array, fakest, fakeSorter, &manager)
     fakest.sortByThis = 0;
-    swcAddArray(array, fakest, fakeSorter, manager)
-    // swcRemoveArray(array, fakest2, fakeSorter, manager)
+    swcAddArray(array, fakest, fakeSorter, &manager)
+    // swcRemoveArray(array, fakest2, fakeSorter, &manager)
 
 
     swcArray* b = (swcArray*)retrieveName(array, &manager);
@@ -96,10 +97,14 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
 
     ((swcWin*)retrieveName(windowName, &manager))->dis = display;
-    ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
 
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
+
+    initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize); 
+    ((swcWin*)retrieveName(windowName, &manager))->eventGroups = initEventGroups(((swcWin*)retrieveName(windowName, &manager)), eventMask, InitialHandleToDivCount);
+
+    uint32_t divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
 
 
     desWindow((swcWin*)retrieveName(windowName, &manager));
@@ -233,6 +238,7 @@ uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWi
     {
         if(eventMask & eventGroups->events[i])
         {
+            fflush(stdout);
             uint32_t saveIt = i;
             //TODO: make this better, It does not need to be a for loop and use i
             for(i = 0; i < eventGroups->handleToEventCount; i++)
@@ -294,6 +300,7 @@ uint32_t initProgramGroups(swcWin* win, uint32_t initialSize)
 {
     win->glProgramNames = swcAllocArray(initialSize, programNames, win->manager);
     win->glNamesToDivs = swcAllocArray(initialSize, nameToDiv, win->manager);
+    return 1;
 }
 
 /**
@@ -308,13 +315,43 @@ uint32_t initProgramGroups(swcWin* win, uint32_t initialSize)
 uint32_t addToProgram(uint32_t divName, const char pathName[256], swcWin* win)
 {
     programNames b;
-    b.pathName = pathName;
-    if(swcContainsArray() != -1)
+    strcpy(b.pathName, pathName);
+    b.programName = 0;//hope it doesnt throw a 0 program name, fix later if a problem
+    programNames *retrieved = (programNames*)swcAddArray(win->glProgramNames, b, programNameSorter, win->manager);
+    if(retrieved == 0)
     {
-        //already exist add to program list 
+        //Failure has occured
+        return 0;
     }
+    if(retrieved->programName == 0)
+    {
+        //TODO:
+        //create a new program and add its name
+        retrieved->programName = 1;// assign it here
+        nameToDiv c;
+        c.programName = retrieved->programName;
+        c.divs = swcAllocArray(InitialProgramToDivSize, uint32_t, win->manager);
+        nameToDiv *retrieved2 = (nameToDiv *)swcAddArray(win->glNamesToDivs, c, nameToDivSorter, win->manager);
+        if(retrieved2 != 0)
+        {
+            uint32_t *retName = (uint32_t *)swcAddArray(retrieved2->divs, divName, nameToDivSorter, win->manager);
+            if(retName != 0)
+            {
+                printf("Do we make it \n\n\n\n\n\n\n");
+                return 1;
+            }
+        }
+        return 0;
+    }
+    printf("Hello this should be occuring!\n\n\n\n\n");
     //doesnt do stuff instead :)
     return 1;
+}
+
+//CREATE: do this
+uint32_t removeFromProgram(uin32_t divName, uint32_t programName, swcWin* win)
+{
+
 }
 
 
@@ -392,6 +429,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);
 
+    addToProgram(div, "fake", win);
 
     // divC(divPoint, onLoad);
 

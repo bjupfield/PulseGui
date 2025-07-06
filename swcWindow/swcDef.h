@@ -10,6 +10,9 @@
 
 #define InitialHandleToDivCount 40
 
+#define InitialProgramSize 40
+#define InitialProgramToDivSize 80
+
 static uint32_t defConfiguration[] =
 {
     GLX_DOUBLEBUFFER, True,
