@@ -8,7 +8,8 @@
 #include "../glInterface/GLInterface.h"
 #include "GLfuncs/glPointers.h"
 
-#define InitialHandleToDivCount 40
+#define InitialEventToHandleSize 20
+#define InitialHandleToDivSize 80
 
 #define InitialProgramSize 40
 #define InitialProgramToDivSize 80
@@ -122,37 +123,28 @@ typedef struct
     char data[];
 }swcArray;
 
-/**
- * @brief This is a container that holds the association between X window events and swcWindow event handlers. an X window event can have
- * handleToEventCount handles associated with it. The Handle container is of size ((4 + handletoevent * 4) * eventGroup count). The first
- * 4 bytes of each region is the event/mask, the rest of the bytes are the name of the event that are associated with said event/mask,
- * with each name pointing to a eventHandle struct 
- * 
- * THIS IS NOW A THEORETICAL STRUCT
- * 
- * Because function pointers are what we are using to assign to handles we are going to include them in our handlecontainer, the first sizeof(uint32_t)
- * bytes being the event/mask of the handle container the second
- * sizeof(uint32_t) bytes being the function pointer and the the next sizeof(uint32_t) bytes of handlecontainer being the name... 
- * because of possible alignment problems the data will now not
- * be handled in a struct
- */
-struct funcHandleArrays{
-    uintptr_t func;
-    uint32_t divsName;
+typedef uint32_t(*funcPointer)(struct swcDiv*);
+typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t x, uint32_t y);
+typedef uint32_t(*handlePointer)(uint32_t* divs, uint32_t divsSize, XEvent* event);
+
+typedef struct {
+    handlePointer func;
+    swcArrayName divsName;
     //TODO: add func that deletes div names in this container
     //TODO: make divsName a swcNameArray
-};
+}funcHandleArrays;
 /**
  * @brief Holds events, honestly i don't really know what this is doing to be honest
  * 
  */
 typedef struct {//TODO: change evnt group to use swcArray
     uint32_t eventGroupCount;
-    uint32_t handleToEventCount;
     uint32_t events[24];//max of 24 eventtypes
-    struct funcHandleArrays funcHandles[];
+    swcArrayName funcGroup[];//array to array of funcs, every event has its own funcgroup array
 }evntGroup;
 
+
+// eventToFunc.FuncHandle.div
 
 /**
  * @brief Container defining the programs linked and the divs linked to them, is used, element pathname is used to not redeclare the same program, and to assign 
@@ -200,9 +192,6 @@ typedef struct {
 
 
 struct swcDiv;
-typedef uint32_t(*funcPointer)(struct swcDiv*);
-typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t x, uint32_t y);
-typedef uint32_t(*handlePointer)(struct swcDiv**, XEvent* event);
 
 /**
  * @brief hi

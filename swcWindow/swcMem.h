@@ -31,9 +31,14 @@ swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager);
 void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
 #define swcAddArray(arrayName, data, sorter, manager) \
         addArray(arrayName, sizeof(typeof(data)), &data, sorter, manager);
+
 uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
+/**
+ * @brief TODO: This...
+ * 
+ */
 #define swcRemoveArray(arrayName, data, sorter, manager) \
-        removeArray(arrayName, sizeof(typeof(data)), &data, sorter, manager);
+        removeArray(arrayName, sizeof(typeof(data)), &data, sorter, manager)
 int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
 #define swcContainsArray(arrayName, data, sorter, manager) \
         containsArray(arrayName, sizeof(typeof(data)), &data, sorter, manager)

@@ -20,7 +20,7 @@ uint32_t bResizeFunc(swcDiv* div, uint32_t x, uint32_t y)
 }
 resizePointer baseResize = bResizeFunc;
 
-uint32_t bEventFunc(swcDiv** divs, XEvent* event)
+uint32_t bEventFunc(uint32_t* divs, uint32_t divsSize, XEvent* event)
 {
     printf("HELLO I AM HERE\n");
     return 0;
