@@ -55,7 +55,8 @@
         "memory": "c",
         "sstream": "c",
         "stdexcept": "c",
-        "swcdef.h": "c"
+        "swcdef.h": "c",
+        "source_location": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

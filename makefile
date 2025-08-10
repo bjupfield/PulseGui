@@ -17,3 +17,11 @@ endif
 run :
 	$(MAKE) main
 	./$(name)
+
+debug :
+ifneq ($(bin), $(binH))
+	mkdir $(binH)
+endif
+	$(MAKE) --directory=glInterface debug
+	$(MAKE) --directory=swcWindow debug
+	gcc -g -o $(name) window.c $(libs)

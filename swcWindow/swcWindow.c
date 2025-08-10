@@ -6,32 +6,6 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
 uint32_t initProgramGroups(swcWin* win, uint32_t initialSize);
 
 
-//plz for the love of god delete this
-typedef struct
-{
-    uint32_t sortByThis;
-    uint64_t miscellaneous;
-}fake;
-uint32_t fakeSorter(void* left, void* right)
-{
-    fake *fakel = (fake*)left;
-    fake *faker = (fake*)right;
-    if(fakel->sortByThis < faker->sortByThis) 
-    {
-        return 0;
-    }
-    if(fakel->sortByThis == faker->sortByThis)
-        return 1;
-    return 2;
-}
-void fakeInsert(void* left, void* right)
-{
-    fake *fakel = (fake*)left;
-    fake *faker = (fake*)right;
-    faker->miscellaneous = fakel->miscellaneous;
-    faker->sortByThis = fakel->sortByThis;
-}
-
 /**
  * @brief Attempts to create and return window based on passed params, pass null to config for default config and mask
  * 
@@ -62,31 +36,6 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
 
     uint32_t windowName = allocNamed(sizeof(swcWin), &manager);
-    
-    fflush(stdout);
-
-    fake fakest = {1, 2};
-
-    // swcArrayName array = allocArray(30, sizeof(fake), fakeSorter, fakeInsert, &manager);
-    swcArrayName array = swcAllocArray(30, fake, &manager)
-
-    fake fakest2 = {2, 2};
-
-    swcAddArray(array, fakest, fakeSorter, &manager)
-    swcAddArray(array, fakest2, fakeSorter, &manager)
-    swcAddArray(array, fakest, fakeSorter, &manager)
-    fakest.sortByThis = 0;
-    swcAddArray(array, fakest, fakeSorter, &manager)
-    // swcRemoveArray(array, fakest2, fakeSorter, &manager)
-
-
-    swcArray* b = (swcArray*)retrieveName(array, &manager);
-
-    fake *fakest3 = (fake*)(b->data);
-    for(int i = 0; i < 3; i++)
-    {
-        printf("SortByThisis: %i\n", fakest3[i]);
-    }
 
     if(!glInitWindowT(display, config, (swcWin*)retrieveName(windowName, &manager), eventMask))
     {
@@ -104,11 +53,13 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize); 
     ((swcWin*)retrieveName(windowName, &manager))->eventGroups = initEventGroups(((swcWin*)retrieveName(windowName, &manager)), eventMask, InitialEventToHandleSize);
 
-    uint32_t divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
+    uint32_t divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, "GlShaders/exampleVert.vert\0", NULL);
 
 
     XMapWindow(((swcWin*)retrieveName(windowName, &manager))->dis, ((swcWin*)retrieveName(windowName, &manager))->mainWin);
     XFlush(((swcWin*)retrieveName(windowName, &manager))->dis);
+
+    delDiv(((swcWin*)retrieveName(windowName, &manager)), divName);
 
     for(uint64_t i = 0; i < 2000000; i++)
     {
@@ -116,6 +67,12 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
         frameChange(&manager);
 
     }
+
+
+    GLint temp[1];
+    glGetIntegerv(GL_SHADER_BINARY_FORMATS, temp);
+
+    printf("\n\n\nTemp: %i \n\n\n", temp[0]);
 
     desWindow((swcWin*)retrieveName(windowName, &manager));
     return null;
@@ -280,10 +237,41 @@ uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWi
     return 0;
 }
 
-//CREATE: make this func
+/**
+ * @brief Removes Div From Event->Function->Div Groups
+ * 
+ * @param divName 
+ * @param eventMask 
+ * @param func 
+ * @param win 
+ * @return Always returns 1?
+ */
 uint32_t removeFromEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWin* win)
 {
+    evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, win->manager);
+    for(uint32_t i = 0; i < eventGroups->eventGroupCount; i++)
+    {
+        if(eventMask & eventGroups->events[i])
+        {
+            
+            funcHandleArrays fake = {func, 0};
 
+            int32_t funcIndex = swcAddArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager);
+
+            if(funcIndex == -1)
+            {
+                //function is not created under group continue (shouldnt ever occur but whatever)
+                continue;
+            }
+            funcHandleArrays *handle = swcAddArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager);
+            if(!swcRemoveArray(handle->divsName, divName, nameToDivSorter, win->manager))
+            {
+                //div is not under function group (shouldnt ever occur)
+                continue;
+            }
+        }
+    }
+    return 1;
 }
 
 
@@ -335,35 +323,28 @@ uint32_t addToProgram(uint32_t divName, const char pathName[256], swcWin* win)
         //Failure has occured
         return 0;
     }
-    nameToDiv *retrieved2;
+
+    uint32_t programName;
+    nameToDiv holder;
     if(retrieved->programName == 0)
     {
-        //TODO:
-        //create a new program and add its name
-
-        retrieved->programName = 1;// assign it here
-
-        //create new programname to div container
-        nameToDiv newProgramToDiv;
-        newProgramToDiv.programName = retrieved->programName;
-        newProgramToDiv.divs = swcAllocArray(InitialProgramToDivSize, uint32_t, win->manager);
-        
-        //add name container to container and retrieve
-        retrieved2 = (nameToDiv *)swcAddArray(win->glNamesToDivs, newProgramToDiv, nameToDivSorter, win->manager);
+        programName = createProgram(pathName, win);
+        holder.divs = swcAllocArray(InitialProgramToDivSize, uint32_t, win->manager);    
     }
     else
     {
-        //retreive continer from container
-        retrieved2 = (nameToDiv *)swcAddArray(win->glNamesToDivs, (retrieved->programName), nameToDivSorter, win->manager);
+        programName = retrieved->programName;
     }
-    if(retrieved2 != 0)
+    holder.programName = programName;
+    nameToDiv *retrievedNameToDivContainer = (nameToDiv*)swcAddArray(win->glNamesToDivs, holder, nameToDivSorter, win->manager);
+
+    if(retrievedNameToDivContainer != 0)
     {
-        //assign the current div to container and check if it assigned
-            uint32_t *retName = (uint32_t *)swcAddArray(retrieved2->divs, divName, nameToDivSorter, win->manager);
-            if(retName != 0)
-            {
-                return *retName;
-            }
+        uint32_t *retrievedDivName = (uint32_t *)swcAddArray(retrievedNameToDivContainer->divs, divName, nameToDivSorter, win->manager);
+        if(*retrievedDivName == divName)
+        {
+            return programName;
+        }
     }
     return 0;
 }
@@ -371,9 +352,17 @@ uint32_t addToProgram(uint32_t divName, const char pathName[256], swcWin* win)
 
 uint32_t removeFromProgram(uint32_t divName, uint32_t programName, swcWin* win)
 {
-    if(swcRemoveArray(win->glNamesToDivs, programName, nameToDivSorter, win->manager))
+    nameToDiv c;
+    c.programName = programName;
+    if(swcContainsArray(win->glNamesToDivs, c, nameToDivSorter, win->manager) == -1)
     {
-        printf("it was removed\\n\n\n\n\n\n\nn\n\n\n\n");
+        //program list doesnt exist
+        return 0;
+    }
+    nameToDiv *retNameToDivStruct = swcAddArray(win->glNamesToDivs, c, nameToDivSorter, win->manager);
+    if(swcRemoveArray(retNameToDivStruct->divs, divName, nameToDivSorter, win->manager))
+    {
+        //divName removed from program list
         return 1;
     }
     return 0;
@@ -420,6 +409,7 @@ uint32_t nameToDivSorter(void* left, void* right)
  * @param dimy 
  * @param onLoad 
  * @param drawFunc 
+ * @param deleteFunc
  * @param resizeFunc 
  * @param eventFunc
  * @param eventTypeMask Event Mask that Assigns Divs to recieve events from window, event mask is identical to XORG Input Event Mask
@@ -427,9 +417,9 @@ uint32_t nameToDivSorter(void* left, void* right)
  * @return Returns Div Name 
  */
 uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy, 
-    uint32_t dimx, uint32_t dimy, funcPointer onLoad, funcPointer drawFunc,
+    uint32_t dimx, uint32_t dimy, funcPointer onLoad, funcPointer drawFunc, funcPointer deleteFunc,
     resizePointer resizeFunc, handlePointer eventFunc, size_t size,
-    uint32_t eventTypeMask, void* excData)
+    uint32_t eventTypeMask, const char pathName[256], void* excData)
 {
     uint32_t div = allocNamed(size, win->manager);
     swcDiv* divPoint = (swcDiv*)retrieveName(div, win->manager);
@@ -439,6 +429,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
         return 0;
     }
 
+    divPoint->name = div;
     divPoint->dimx = dimx;
     divPoint->dimy = dimy;
     divPoint->posx = posx;
@@ -448,8 +439,10 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
     divPoint->drawFunc = drawFunc;
     divPoint->resizeFunc = resizeFunc;
     divPoint->eventFunc = eventFunc;
+    divPoint->deleteFunc = deleteFunc;
     divPoint->size = size;
-    divPoint->programName = addToProgram(div, "fake", win);
+    divPoint->eventMask = eventTypeMask;
+    divPoint->programName = addToProgram(div, pathName, win);
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);
 
@@ -466,13 +459,32 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
  * @brief 
  * 
  * @param win 
- * @param div 
+ * @param divName
  * @return uint32_t || Deleted div name if success if fail 0
  */
-uint32_t delDiv(swcWin* win, uint32_t div)
+uint32_t delDiv(swcWin* win, uint32_t divName)
 {//TODO: remove all references
 
+    swcDiv* div = (swcDiv*)retrieveName(divName, win->manager);
+    if(div == 0)
+    {
+        return 0;
+    }
 
+    if(!removeFromProgram(divName, div->programName, win))
+    {
+        return 0;
+    }
+
+    if(!removeFromEvents(divName, div->eventMask, div->eventFunc, win))
+    {
+        return 0;
+    }
+
+    if(!div->deleteFunc(div))
+    {
+        return 0;
+    }
     uint32_t success = deallocNamed(div, win->manager);
     return success;
 }

@@ -558,6 +558,13 @@ void* retrieveName(uint32_t name, swcMemMan* manager)
     return root->pointer;
 }
 
+/**
+ * @brief Retrieves the Literal Name Structure
+ * 
+ * @param name 
+ * @param manager 
+ * @return swcName* 
+ */
 swcName* retrieveNameL(uint32_t name, swcMemMan* manager)
 {
     return binSearch(name, manager);

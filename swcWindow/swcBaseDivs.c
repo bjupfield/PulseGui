@@ -26,3 +26,11 @@ uint32_t bEventFunc(uint32_t* divs, uint32_t divsSize, XEvent* event)
     return 0;
 }
 handlePointer baseEvent = bEventFunc;
+
+uint32_t bDeleteFunc(swcDiv* div)
+{
+    printf("Hi, This Div (DIV: #%i) has been deleted\n\n\n", div->name);
+    fflush(stdout);
+    return 1;
+}
+funcPointer baseDeleteFunc = bDeleteFunc;

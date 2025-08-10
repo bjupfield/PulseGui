@@ -123,6 +123,8 @@ typedef struct
     char data[];
 }swcArray;
 
+struct swcDiv;
+
 typedef uint32_t(*funcPointer)(struct swcDiv*);
 typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t x, uint32_t y);
 typedef uint32_t(*handlePointer)(uint32_t* divs, uint32_t divsSize, XEvent* event);
@@ -190,9 +192,6 @@ typedef struct {
 }swcWin;
 
 
-
-struct swcDiv;
-
 /**
  * @brief hi
  * 
@@ -203,6 +202,7 @@ typedef struct swcDiv{
     swcWin* win;
     uint32_t name;
     uint32_t parent;
+    uint32_t eventMask;//EventMask
     uint32_t children[512];//making this static for now for an easier memory manager, will change eventually if this project expands
     //TODO: change this
     uint32_t handleGroup;// event func group
@@ -215,6 +215,7 @@ typedef struct swcDiv{
     _Float32* vba;
     funcPointer drawFunc;
     funcPointer onLoad;
+    funcPointer deleteFunc;//do not deallocate the div inside this func, used to dereference the div in any structures that might refere to it
     resizePointer resizeFunc;
     handlePointer eventFunc;
     /*
@@ -231,5 +232,7 @@ typedef struct swcDiv{
     * at least a default constructor can be provided, that you just need to pass sizeof(yourdiv)
     */
 }swcDiv;
+
+
 
 #endif

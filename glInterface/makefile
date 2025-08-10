@@ -26,3 +26,12 @@ clean :
 	-for file in $(files); do \
 		rm $(ie)/$$file.o; \
 	done
+
+debug :
+ifneq ($(dump),$(ie))
+	mkdir $(ie)
+endif
+	for file in $(files); do \
+		gcc -g -c $$file.c -o $(ie)/$$file.o; \
+	done
+	ar rc $(ie)/libGLInterface.a $(filesO)

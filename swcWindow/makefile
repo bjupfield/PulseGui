@@ -37,3 +37,11 @@ clean :
 		rm $(ie)/$$file.o; \
 	done
 	rm $(ie)/swcDef.o
+
+debug : 
+	-gcc -g -c swcDef.h -o $(ie)/swcDef.o $(libs)
+	-for file in $(files); do \
+		noDir="$${file##*/}"; \
+		gcc -g -c $$file.c -o $(ie)/$$noDir.o $(libs); \
+	done
+	ar rc $(ie)/libSWCWindow.a $(filesO) $(ie)/swcDef.o
