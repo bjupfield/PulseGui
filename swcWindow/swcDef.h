@@ -14,6 +14,8 @@
 #define InitialProgramSize 40
 #define InitialProgramToDivSize 80
 
+#define InitialDivCount 512
+
 static uint32_t defConfiguration[] =
 {
     GLX_DOUBLEBUFFER, True,
@@ -178,6 +180,7 @@ typedef struct {
     GLXWindow glWindow;
     swcArrayName glProgramNames;//array of program names
     swcArrayName glNamesToDivs;//association of program names to divs
+    swcArrayName divs;
     /*
     * Okay What we have run into is we need mass allocation of dynamic memory
     * the option that im going to take is arena memory allocation, which means
@@ -210,12 +213,11 @@ typedef struct swcDiv{
     uint32_t posy;
     uint32_t dimx;
     uint32_t dimy;
-    uint32_t programGroup;//these two can probably be the same
     uint32_t programName;
     _Float32* vba;
     funcPointer drawFunc;
     funcPointer onLoad;
-    funcPointer deleteFunc;//do not deallocate the div inside this func, used to dereference the div in any structures that might refere to it
+    funcPointer deleteFunc;//do not deallocate the div inside this func, used to dereference the div in any structures that might reference to it
     resizePointer resizeFunc;
     handlePointer eventFunc;
     /*

@@ -115,10 +115,12 @@ uint32_t createProgram(const char pathName[256], swcWin* win)
 
     uint32_t programName = win->glPointers.sigCreateProgram();
 
+    //currently only accepting a vertex shader
     attachShader(pathName, GL_VERTEX_SHADER, programName, win);
 
     //currently using the beautiful exampleFrag.frag as the required frag shader
-    attachShader("GlShaders/exampleFrag.frag", GL_FRAGMENT_SHADER, programName, win);
+    char fragPath[256] = "GlShaders/exampleFrag.frag";
+    attachShader(fragPath, GL_FRAGMENT_SHADER, programName, win);
 
     win->glPointers.sigReleaseShaderCompiler();
 

@@ -107,12 +107,6 @@ int main(int argc, char **argv)
 
     XCloseDisplay(display);
 
-    printf("\n MaxAlignOf: %li\n", sizeof(swcDiv));
-
-    uint32_t count = 1;
-    printf("\n\n1++: %i\n", sizeof(funcPointer));
-
-
     return 0;
 
 }

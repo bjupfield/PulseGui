@@ -537,7 +537,7 @@ uint64_t glInitWindow(Display* display, Window win)
     GLXWindow window = glXCreateWindow(display, initConfig, win, NULL);
     GLXContext cont = glXCreateNewContext(display, initConfig,  GLX_RGBA_TYPE, NULL, True);
 
-    if(window == NULL || cont == NULL)
+    if(window == 0 || cont == NULL)
     {
         return 0;
     }

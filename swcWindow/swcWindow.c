@@ -4,6 +4,7 @@ uint32_t eventHandler(swcWin* win);
 uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
 uint32_t initProgramGroups(swcWin* win, uint32_t initialSize);
+uint32_t render();
 
 
 /**
@@ -30,108 +31,63 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //      XSetErrorHandler(errorHandler);
 
 
+    //Okay I'm going to cdocumenbt this function:
 
+    //create the memory manager
     swcMemMan manager = createMan(40, 20000, 50000, 25000);
 
+    //add memory space to the manager and add the windows space too it
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
-
     uint32_t windowName = allocNamed(sizeof(swcWin), &manager);
 
+    //itiitalize gl window data into window space
     if(!glInitWindowT(display, config, (swcWin*)retrieveName(windowName, &manager), eventMask))
     {
         //failed to initialize gl stuff
         return null;
     }
 
+    //add the managers pointer to thte window struct
     ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
-
+    //add the display to the window struct
     ((swcWin*)retrieveName(windowName, &manager))->dis = display;
 
+    //increase arena space for some reason???? like i don't know what this why is this here?
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
 
+    //intialize all arrayName things
     initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize); 
     ((swcWin*)retrieveName(windowName, &manager))->eventGroups = initEventGroups(((swcWin*)retrieveName(windowName, &manager)), eventMask, InitialEventToHandleSize);
+    ((swcWin*)retrieveName(windowName, &manager))->divs = swcAllocArray(InitialDivCount, uint32_t, &manager);
 
-    uint32_t divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, "GlShaders/exampleVert.vert\0", NULL);
+    //fake div creation
+    char exampleVertPath[256] = "GlShaders/exampleVert.vert\0";
+    uint32_t divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, exampleVertPath, NULL);
 
-
+    //mapping window and pushing to xorg... I think?
     XMapWindow(((swcWin*)retrieveName(windowName, &manager))->dis, ((swcWin*)retrieveName(windowName, &manager))->mainWin);
     XFlush(((swcWin*)retrieveName(windowName, &manager))->dis);
 
+    //test del div
     delDiv(((swcWin*)retrieveName(windowName, &manager)), divName);
 
+    //main loop? 
     for(uint64_t i = 0; i < 2000000; i++)
     {
         handleEvents((swcWin*)retrieveName(windowName, &manager));
+        render();
         frameChange(&manager);
-
     }
 
 
-    GLint temp[1];
-    glGetIntegerv(GL_SHADER_BINARY_FORMATS, temp);
-
-    printf("\n\n\nTemp: %i \n\n\n", temp[0]);
-
     desWindow((swcWin*)retrieveName(windowName, &manager));
     return null;
-
-    // swcWin win = {
-    //     .mainWin = XCreateWindow(
-    //     display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
-    //     info->depth, CopyFromParent, info->visual, 
-	// 	CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa),
-    // };
-
-    // XFree(info);
-
-    // win.dis = display;
-
-
-    // //in.glHandle = glInitWindow(win.dis, win.mainWin);
-
-    // //printf(win.glHandle == 0 ? "Failure\n\n\n\n\n\n\n\n\n" : "Success\n\n\n\n\n\n");
-    // XMapWindow(win.dis, win.mainWin);
-    // // XFlush(win.dis);
-
-    // manager = createMan(sizeof(swcDiv) * 5000, 10, 50000, 25000);
-
-    // win.manager = &manager;
-
-    // addArena(sizeof(swcDiv) * 2000, sizeof(swcDiv), win.manager);
-
-    // win.eventGroups = initEventGroups(&win, eventMask, 40);
-
-    // //for testing divs?
-    // uint32_t divName = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
-    // uint32_t di = initDiv(&win, 0, 24, 0, 0, 0, baseLoad, baseDraw, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, NULL);
-
-
-    // swcDiv *div = retrieveName(divName, win.manager);
-
-    // printf("\n\ndiv.posx: %i\n\n", div->posx);
-
-    // // EVENT HANDLER
-
-    // for(uint64_t i = 0; i < 20000; i++)
-    // {
-    //     handleEvents(&win);
-    //     frameChange(win.manager);
-
-    // }
-    //DRAWER
-
-
-    //remove dummy
-    // desWindow(&win);
-
-    // return win;
 }
 
 uint32_t desWindow(swcWin* win)
 {
-    //TODO: make this func?
+    //TODO: make this func? need to add something that deletes the divs
     XDestroyWindow(win->dis, win->mainWin);
     freeMemMan(win->manager);
     return 1;
@@ -211,7 +167,7 @@ uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWi
         if(eventMask & eventGroups->events[i])
         {
             
-            funcHandleArrays fake = {func, 0};
+            funcHandleArrays fake = {(handlePointer)func, 0};
             
             funcHandleArrays *handle = swcAddArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager);
 
@@ -254,11 +210,9 @@ uint32_t removeFromEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, 
         if(eventMask & eventGroups->events[i])
         {
             
-            funcHandleArrays fake = {func, 0};
+            funcHandleArrays fake = {(handlePointer)func, 0};
 
-            int32_t funcIndex = swcAddArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager);
-
-            if(funcIndex == -1)
+            if(!swcContainsArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager))
             {
                 //function is not created under group continue (shouldnt ever occur but whatever)
                 continue;
@@ -446,8 +400,11 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);
 
+    swcAddArray(win->divs, div, nameToDivSorter, win->manager);
+
     size_t excSize = size - sizeof(swcDiv);
     memcpy((char*)divPoint + sizeof(swcDiv), excData, excSize);
+    
 
     // divC(divPoint, onLoad);
 
@@ -476,7 +433,7 @@ uint32_t delDiv(swcWin* win, uint32_t divName)
         return 0;
     }
 
-    if(!removeFromEvents(divName, div->eventMask, div->eventFunc, win))
+    if(!removeFromEvents(divName, div->eventMask, (uintptr_t)(div->eventFunc), win))
     {
         return 0;
     }
@@ -485,7 +442,11 @@ uint32_t delDiv(swcWin* win, uint32_t divName)
     {
         return 0;
     }
-    uint32_t success = deallocNamed(div, win->manager);
+    if(!swcRemoveArray(win->divs, divName, handleSorter, win->manager))
+    {
+        return 0;
+    }
+    uint32_t success = deallocNamed(divName, win->manager);
     return success;
 }
 
@@ -617,5 +578,10 @@ uint32_t handleEvents(swcWin* win)
                 break;
         }
     }
+    return 0;
+}
+
+uint32_t render()
+{
     return 0;
 }
