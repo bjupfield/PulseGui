@@ -16,6 +16,8 @@
 
 #define InitialDivCount 512
 
+#define DefaultLayerCount 32
+
 static uint32_t defConfiguration[] =
 {
     GLX_DOUBLEBUFFER, True,
@@ -62,16 +64,22 @@ typedef struct {
  * @brief Name Pointer Size contianer
  * 
  */
-typedef struct swcName {
+typedef struct swcNameStruct {
     uint32_t name;
     void* pointer;
     size_t size;
-    struct swcName* lChild;
+    struct swcNameStruct* lChild;
     uint32_t lSize;
-    struct swcName* rChild;
+    struct swcNameStruct* rChild;
     uint32_t rSize;
-    struct swcName* par;
-}swcName;
+    struct swcNameStruct* par;
+}swcNameStruct;
+
+/**
+ * @brief Like the name to give back to any program requesting a data block, and that which is used to retrieved previously allocated data blocks
+ * 
+ */
+typedef uint32_t swcName;
 
 
 /**
@@ -84,7 +92,7 @@ typedef struct {
     swcArena* arenas;
     uint32_t nameCount;
     uint32_t nameSize;
-    swcName* namesTree;
+    swcNameStruct* namesTree;
     swcArena singleBuffer; /* Arena for single frame storage */
     swcArena doubleBuffer1; /* Don't Know if I'll use double buffers */
     swcArena doubleBuffer2;
@@ -161,12 +169,17 @@ typedef struct {
 }programNames;
 
 typedef struct {
+    uint32_t layer;
+    swcArrayName programGroups;
+}layerToProgram;
+
+typedef struct {
     uint32_t programName;
     swcArrayName divs;
 }nameToDiv;
 
 /**
- * @brief This is the Window...
+ * @brief This is the Window... Descriptions are below members
  * 
  */
 typedef struct {
@@ -179,8 +192,11 @@ typedef struct {
     GLXContext glContext;
     GLXWindow glWindow;
     swcArrayName glProgramNames;//array of program names
-    swcArrayName glNamesToDivs;//association of program names to divs
-    swcArrayName divs;
+    swcArrayName divLayers;
+    /*
+    * Div Layers are used for rendering purposes, they control the z layer for div
+    * The DivLayer Array is a reference to individual layer arrays
+    */
     /*
     * Okay What we have run into is we need mass allocation of dynamic memory
     * the option that im going to take is arena memory allocation, which means
@@ -205,6 +221,9 @@ typedef struct swcDiv{
     swcWin* win;
     uint32_t name;
     uint32_t parent;
+    /*
+    * Default Parent is the Root Node if No Parent is assigned
+    */
     uint32_t eventMask;//EventMask
     uint32_t children[512];//making this static for now for an easier memory manager, will change eventually if this project expands
     //TODO: change this
@@ -213,6 +232,7 @@ typedef struct swcDiv{
     uint32_t posy;
     uint32_t dimx;
     uint32_t dimy;
+    uint32_t layer;// window layer div is assigned to
     uint32_t programName;
     _Float32* vba;
     funcPointer drawFunc;

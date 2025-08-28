@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     printf("mapping should start\n");
     // return 0;
 
-    initWindow(defConfiguration, defMask, 0, 0, 200, 200);
+    initWindow(defConfiguration, defMask, 0, 0, 200, 200, 0);
     Display* display = XOpenDisplay(NULL);
 
     //we will set an errorhandler down the line, but I don't really want to mess with it now

@@ -3,7 +3,8 @@
 uint32_t eventHandler(swcWin* win);
 uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
-uint32_t initProgramGroups(swcWin* win, uint32_t initialSize);
+uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t initialLayerCount);
+uint32_t delDiv(swcWin* win, swcName divName);
 uint32_t render();
 
 
@@ -18,7 +19,7 @@ uint32_t render();
  * @param dimy Window Height
  * @return swcWin
  */
-swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t posy, uint32_t dimx, uint32_t dimy)
+swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t posy, uint32_t dimx, uint32_t dimy, uint32_t layerCount)
 {
 //TODO:
     //MAKE NO RETURN
@@ -38,7 +39,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     //add memory space to the manager and add the windows space too it
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
-    uint32_t windowName = allocNamed(sizeof(swcWin), &manager);
+    swcName windowName = allocNamed(sizeof(swcWin), &manager);
 
     //itiitalize gl window data into window space
     if(!glInitWindowT(display, config, (swcWin*)retrieveName(windowName, &manager), eventMask))
@@ -57,13 +58,12 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
 
     //intialize all arrayName things
-    initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize); 
+    initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize, (layerCount == 0 ? DefaultLayerCount : layerCount)); 
     ((swcWin*)retrieveName(windowName, &manager))->eventGroups = initEventGroups(((swcWin*)retrieveName(windowName, &manager)), eventMask, InitialEventToHandleSize);
-    ((swcWin*)retrieveName(windowName, &manager))->divs = swcAllocArray(InitialDivCount, uint32_t, &manager);
 
     //fake div creation
     char exampleVertPath[256] = "GlShaders/exampleVert.vert\0";
-    uint32_t divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, exampleVertPath, NULL);
+    swcName divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, 1, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, exampleVertPath, NULL);
 
     //mapping window and pushing to xorg... I think?
     XMapWindow(((swcWin*)retrieveName(windowName, &manager))->dis, ((swcWin*)retrieveName(windowName, &manager))->mainWin);
@@ -124,7 +124,7 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
         }
     }
     
-    uint32_t name = allocNamed(sizeof(evntGroup) + sizeof(swcArrayName) * count, swcWin->manager);
+    swcName name = allocNamed(sizeof(evntGroup) + sizeof(swcArrayName) * count, swcWin->manager);
     evntGroup* eventGroup = retrieveName(name, swcWin->manager);
     
     eventGroup->eventGroupCount = count;
@@ -158,7 +158,7 @@ uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleTo
  * @param win 
  * @return 0 if Fail (No EventGroups Allowed in Window or Bug) | 1 if Success
  */
-uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWin* win)
+uint32_t addToEvents(swcName divName, uint32_t eventMask, uintptr_t func, swcWin* win)
 {
     uint8_t b = 0;
     evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, win->manager);
@@ -202,7 +202,7 @@ uint32_t addToEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWi
  * @param win 
  * @return Always returns 1?
  */
-uint32_t removeFromEvents(uint32_t divName, uint32_t eventMask, uintptr_t func, swcWin* win)
+uint32_t removeFromEvents(swcName divName, uint32_t eventMask, uintptr_t func, swcWin* win)
 {
     evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, win->manager);
     for(uint32_t i = 0; i < eventGroups->eventGroupCount; i++)
@@ -244,16 +244,23 @@ uint32_t programNameSorter(void* left, void* right);
 
 
 /**
- * @brief 
+ * @brief Initializes arrays for rendering purposes
  * 
  * @param win 
  * @param initialSize Amount Of Programs to Initialize for
  * @return Return 0 if Fail | Return 1 if Success
  */
-uint32_t initProgramGroups(swcWin* win, uint32_t initialSize)
+uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t initialLayerCount)
 {
-    win->glProgramNames = swcAllocArray(initialSize, programNames, win->manager);
-    win->glNamesToDivs = swcAllocArray(initialSize, nameToDiv, win->manager);
+    win->glProgramNames = swcAllocArray(initialProgramCount, programNames, win->manager);
+    win->divLayers = swcAllocArray(initialLayerCount, layerToProgram, win->manager);
+    for(uint32_t i = 0; i < initialLayerCount; i++)
+    {
+        layerToProgram add;
+        add.layer = i;
+        add.programGroups = swcAllocArray(initialProgramCount, nameToDiv, win->manager);
+        swcAddArray(win->divLayers, add, nameToDivSorter, win->manager);
+    }
     return 1;
 }
 
@@ -261,12 +268,21 @@ uint32_t initProgramGroups(swcWin* win, uint32_t initialSize)
  * @brief Checks to see if shader is already compiled and linked, if not creates program and assigns to it, 
  * else assigns to the already created program group
  * 
+ * in the process of changing how the programs are created and assigned, first there will be two blocks for program data
+ * the first block will relate the program path to the program name, the second will be how rendering is done, first an array that holds 
+ * arrays, these held arrays will represent layers, and each layer will hold spaces or other arrays representing the individual programs, so
+ * on render it will activate layer by layer, iterating through each program group in the layers.
+ * to do this in this function first a check must be ran on the programArray, to see if the program already exist, if it does do nothing in this array but save the glName value,
+ * if not create the program and add it to the array and save the glName value. than for the second array check the layer that the div is assigned to, see if that layer has a program space of the tpye that
+ * this div is assigned to through the saved glprogramname, if it does assign that div to it, if it does not create the space and than add the div to it
+ * 
+ * 
  * @param divName 
  * @param pathName 
  * @param win 
  * @return 0 if Failure | Program Name if Success if Success
  */
-uint32_t addToProgram(uint32_t divName, const char pathName[256], swcWin* win)
+uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256], swcWin* win)
 {
     programNames b;
     strcpy(b.pathName, pathName);
@@ -280,46 +296,66 @@ uint32_t addToProgram(uint32_t divName, const char pathName[256], swcWin* win)
 
     uint32_t programName;
     nameToDiv holder;
-    if(retrieved->programName == 0)
+    if(retrieved->programName == 0)//program has not been assigned/created... create program
     {
-        programName = createProgram(pathName, win);
+        retrieved->programName = createProgram(pathName, win);
         holder.divs = swcAllocArray(InitialProgramToDivSize, uint32_t, win->manager);    
     }
-    else
-    {
-        programName = retrieved->programName;
-    }
-    holder.programName = programName;
-    nameToDiv *retrievedNameToDivContainer = (nameToDiv*)swcAddArray(win->glNamesToDivs, holder, nameToDivSorter, win->manager);
+    programName = retrieved->programName;
+    
 
-    if(retrievedNameToDivContainer != 0)
+    //retrieve layers programgroups
+    layerToProgram *tempLayerToProgram = (layerToProgram*)allocSB(sizeof(layerToProgram), win->manager);
+    tempLayerToProgram->layer = layer;
+    tempLayerToProgram = (layerToProgram*)swcAddArray(win->divLayers, *tempLayerToProgram, nameToDivSorter, win->manager);
+    //currently not checking to see if a layer exist or not assuming it does
+
+    //retrieve programsname divgroup
+    nameToDiv *tempNameToDivs = (nameToDiv*)allocSB(sizeof(nameToDiv), win->manager);;
+    tempNameToDivs->programName = programName;
+    tempNameToDivs->divs = NULL;
+    tempNameToDivs = (nameToDiv*)swcAddArray(tempLayerToProgram->programGroups, *tempNameToDivs, nameToDivSorter, win->manager);
+    if(tempNameToDivs->divs == NULL)
     {
-        uint32_t *retrievedDivName = (uint32_t *)swcAddArray(retrievedNameToDivContainer->divs, divName, nameToDivSorter, win->manager);
-        if(*retrievedDivName == divName)
-        {
-            return programName;
-        }
+        tempNameToDivs->divs = swcAllocArray(InitialProgramToDivSize, swcName, win->manager);
     }
+    
+
+    //add this div to that layer->programgroup->divs array
+    if(swcAddArray(tempNameToDivs->divs, divName, nameToDivSorter, win->manager) != 0)
+    {
+        return programName;
+    }
+
     return 0;
 }
 
 
-uint32_t removeFromProgram(uint32_t divName, uint32_t programName, swcWin* win)
+uint32_t removeFromProgram(swcName divName, uint32_t programName, uint32_t layer, swcWin* win)
 {
-    nameToDiv c;
-    c.programName = programName;
-    if(swcContainsArray(win->glNamesToDivs, c, nameToDivSorter, win->manager) == -1)
+    layerToProgram tempLayer;
+    tempLayer.layer = layer;
+    uint32_t index = swcContainsArray(win->divLayers, tempLayer, nameToDivSorter, win->manager);
+    if(index == -1)
     {
-        //program list doesnt exist
+        //layer does not exist
         return 0;
     }
-    nameToDiv *retNameToDivStruct = swcAddArray(win->glNamesToDivs, c, nameToDivSorter, win->manager);
-    if(swcRemoveArray(retNameToDivStruct->divs, divName, nameToDivSorter, win->manager))
+    swcArray* arr = retrieveArray(win->divLayers, win->manager);
+    tempLayer = ((layerToProgram*)((retrieveArray(win->divLayers, win->manager))->data))[index];
+
+    nameToDiv tempNameToDiv;
+    tempNameToDiv.programName = programName;
+    index = swcContainsArray(tempLayer.programGroups, tempNameToDiv, nameToDivSorter, win->manager);
+    if(index == -1)
     {
-        //divName removed from program list
-        return 1;
+        //program group in layer does not exist
+        return 0;
     }
-    return 0;
+
+    tempNameToDiv = ((nameToDiv*)((retrieveArray(tempLayer.programGroups, win->manager))->data))[index];
+    
+    return swcRemoveArray(tempNameToDiv.divs, divName, nameToDivSorter, win->manager);
     
 }
 
@@ -370,12 +406,13 @@ uint32_t nameToDivSorter(void* left, void* right)
  * @param excData
  * @return Returns Div Name 
  */
-uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy, 
-    uint32_t dimx, uint32_t dimy, funcPointer onLoad, funcPointer drawFunc, funcPointer deleteFunc,
+uint32_t initDiv(swcWin* win, uint32_t parent, 
+    uint32_t posx, uint32_t posy, uint32_t dimx, uint32_t dimy, uint32_t layer,  
+    funcPointer onLoad, funcPointer drawFunc, funcPointer deleteFunc,
     resizePointer resizeFunc, handlePointer eventFunc, size_t size,
     uint32_t eventTypeMask, const char pathName[256], void* excData)
 {
-    uint32_t div = allocNamed(size, win->manager);
+    swcName div = allocNamed(size, win->manager);
     swcDiv* divPoint = (swcDiv*)retrieveName(div, win->manager);
 
     if(divPoint == NULL)
@@ -388,6 +425,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
     divPoint->dimy = dimy;
     divPoint->posx = posx;
     divPoint->posy = posy;
+    divPoint->layer = layer;
     divPoint->parent = parent;
     divPoint->onLoad = onLoad;
     divPoint->drawFunc = drawFunc;
@@ -396,11 +434,9 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
     divPoint->deleteFunc = deleteFunc;
     divPoint->size = size;
     divPoint->eventMask = eventTypeMask;
-    divPoint->programName = addToProgram(div, pathName, win);
+    divPoint->programName = addToProgram(div, layer, pathName, win);
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);
-
-    swcAddArray(win->divs, div, nameToDivSorter, win->manager);
 
     size_t excSize = size - sizeof(swcDiv);
     memcpy((char*)divPoint + sizeof(swcDiv), excData, excSize);
@@ -419,7 +455,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent, uint32_t posx, uint32_t posy,
  * @param divName
  * @return uint32_t || Deleted div name if success if fail 0
  */
-uint32_t delDiv(swcWin* win, uint32_t divName)
+uint32_t delDiv(swcWin* win, swcName divName)
 {//TODO: remove all references
 
     swcDiv* div = (swcDiv*)retrieveName(divName, win->manager);
@@ -428,7 +464,7 @@ uint32_t delDiv(swcWin* win, uint32_t divName)
         return 0;
     }
 
-    if(!removeFromProgram(divName, div->programName, win))
+    if(!removeFromProgram(divName, div->programName, div->layer, win))
     {
         return 0;
     }
@@ -439,10 +475,6 @@ uint32_t delDiv(swcWin* win, uint32_t divName)
     }
 
     if(!div->deleteFunc(div))
-    {
-        return 0;
-    }
-    if(!swcRemoveArray(win->divs, divName, handleSorter, win->manager))
     {
         return 0;
     }
@@ -482,7 +514,7 @@ uint32_t handleEvents(swcWin* win)
                     for(c = 0; c < funcs->curSize; c++)
                     {
                         swcArray *names = retrieveArray(funcs2[c].divsName, win->manager);
-                        uint32_t* divNames = allocSB(names->curSize, win->manager);
+                        swcName* divNames = allocSB(names->curSize, win->manager);
                         memcpy(divNames, names->data, names->curSize * sizeof(uint32_t));
                         funcs2[c].func(divNames, names->curSize, &event); 
                     }

@@ -8,11 +8,11 @@
  * 
  * @param name 
  * @param manager 
- * @return swcName* 
+ * @return swcNameStruct* 
  */
-static inline swcName* binSearch(uint32_t name, swcMemMan* manager)
+static inline swcNameStruct* binSearch(uint32_t name, swcMemMan* manager)
 {
-    swcName* root = manager->namesTree;
+    swcNameStruct* root = manager->namesTree;
     while(root != NULL && root->name != name)
     {
         if(name > root->name)
@@ -115,10 +115,10 @@ swcMemMan createMan(uint32_t arCount, uint32_t naCount, uint32_t singleBufSize, 
         .curDB = &ret.doubleBuffer1,
 
     };
-    swcArena *a = addArena((sizeof(swcName) + (-sizeof(swcName) & alignof(swcName))) * naCount, sizeof(swcName), &ret);
+    swcArena *a = addArena((sizeof(swcNameStruct) + (-sizeof(swcNameStruct) & alignof(swcNameStruct))) * naCount, sizeof(swcNameStruct), &ret);
     //TODO: change maxsize to something dynamic
 
-    ret.namesTree = (swcName*)alloc(a, sizeof(swcName));
+    ret.namesTree = (swcNameStruct*)alloc(a, sizeof(swcNameStruct));
     ret.namesTree->name = 1 << 15;//for binary tree start, max divs i guess is sizeof(uint32_t) - 1
     ret.namesTree->pointer = NULL;
     ret.namesTree->size = 0;
@@ -149,6 +149,8 @@ swcArena* addArena(size_t size, size_t avgData, swcMemMan* manager)
 
 /**
  * @brief returns pointer of data block of size size attached to manager
+ * This is unsafe memory allocation, the memory is not tracked and has the possibility of being overwritten
+ * if the manager runs out of memory
  * 
  * @param size 
  * @param manager 
@@ -172,7 +174,7 @@ void *allocM(size_t size, swcMemMan *manager)
  * @param size 
  * @return Returns name
  */
-uint32_t allocNamed(size_t size, swcMemMan* manager)
+swcName allocNamed(size_t size, swcMemMan* manager)
 {
     void* data = allocM(size, manager);
 
@@ -182,7 +184,7 @@ uint32_t allocNamed(size_t size, swcMemMan* manager)
 
     //gen name
 
-    swcName* root = manager->namesTree;
+    swcNameStruct* root = manager->namesTree;
     uint32_t genName = root->name >> 1;
     while(root->lChild != NULL && root->rChild != NULL)
     {
@@ -212,7 +214,7 @@ uint32_t allocNamed(size_t size, swcMemMan* manager)
         genName = root->name - genName;
     }
 
-    swcName* name = (swcName*)alloc(manager->arenas, sizeof(swcName));
+    swcNameStruct* name = (swcNameStruct*)alloc(manager->arenas, sizeof(swcNameStruct));
 
     if(root->lSize > root->rSize)
     {
@@ -243,9 +245,9 @@ uint32_t allocNamed(size_t size, swcMemMan* manager)
  * @param name 
  * @return uint32_t dealloced name if succes, 0 if failure
  */
-uint32_t deallocNamed(uint32_t name, swcMemMan* manager)
+uint32_t deallocNamed(swcName name, swcMemMan* manager)
 {
-    swcName* root = binSearch(name, manager);
+    swcNameStruct* root = binSearch(name, manager);
     if(root == NULL)
     {
         return 0;
@@ -265,9 +267,9 @@ uint32_t deallocNamed(uint32_t name, swcMemMan* manager)
  * @param swcN I don't see a situation you call this func without having this too
  * @return 1 Upon Success | 0 Upon Failure 
  */
-uint32_t reallocNamed(uint32_t name, uint32_t newSize, swcMemMan* manager, swcName* swcN)
+uint32_t reallocNamed(swcName name, uint32_t newSize, swcMemMan* manager, swcNameStruct* swcN)
 {
-    swcName* swcName = retrieveNameL(name, manager);
+    swcNameStruct* swcName = retrieveNameL(name, manager);
     if(swcName == NULL)
     {
         return 0;
@@ -316,7 +318,7 @@ swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager)
 {
     swcArrayName ret = allocNamed(size * dataSize + sizeof(uint32_t) + sizeof(size_t) + sizeof(uintptr_t), manager);
     
-    swcName *arrayName = retrieveNameL(ret, manager);
+    swcNameStruct *arrayName = retrieveNameL(ret, manager);
     swcArray *array = (swcArray*)(arrayName->pointer);
     array->curSize = 0;
     return ret; //hhmmmmm
@@ -334,7 +336,7 @@ swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager)
 void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
 {
     
-    swcName* nameArray = retrieveNameL(arrayName, manager);
+    swcNameStruct* nameArray = retrieveNameL(arrayName, manager);
     if(nameArray == NULL)
     {
         return 0;
@@ -415,7 +417,7 @@ void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc s
 uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
 {
 
-    swcName* nameArray = retrieveNameL(arrayName, manager);
+    swcNameStruct* nameArray = retrieveNameL(arrayName, manager);
     if(nameArray == NULL)
     {
         return 0;
@@ -481,7 +483,7 @@ uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sort
  */
 int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
 {
-    swcName* nameArray = retrieveNameL(arrayName, manager);
+    swcNameStruct* nameArray = retrieveNameL(arrayName, manager);
     if(nameArray == NULL)
     {
         return -1;
@@ -550,7 +552,7 @@ swcArray* retrieveArray(swcArrayName name, swcMemMan* manager)
  */
 void* retrieveName(uint32_t name, swcMemMan* manager)
 {
-    swcName *root = binSearch(name, manager);
+    swcNameStruct *root = binSearch(name, manager);
     if(root == NULL)
     {
         return NULL;
@@ -565,7 +567,7 @@ void* retrieveName(uint32_t name, swcMemMan* manager)
  * @param manager 
  * @return swcName* 
  */
-swcName* retrieveNameL(uint32_t name, swcMemMan* manager)
+swcNameStruct* retrieveNameL(uint32_t name, swcMemMan* manager)
 {
     return binSearch(name, manager);
 }
@@ -622,9 +624,9 @@ swcMemMan reconfigureArenas(swcMemMan* manager)
     //TODO: FIX ABOVE LINE(MINSIZE and AVGSIZE conflict, or not really, but it creates a memory size problem where every arena is made for the largest arena)
     //i guess its not really a problem now that I think of it... but whatever
 
-    swcName* root = manager->namesTree;
-    swcName* parent = ret.namesTree;
-    swcName* lChilds = allocM(sizeof(lChilds) * 24, &ret);//only need 16 lchilds to fully copy 2^32
+    swcNameStruct* root = manager->namesTree;
+    swcNameStruct* parent = ret.namesTree;
+    swcNameStruct* lChilds = allocM(sizeof(lChilds) * 24, &ret);//only need 16 lchilds to fully copy 2^32
     uint32_t lChildsCount = 0;
     if(root->lChild != NULL)
     {
@@ -637,7 +639,7 @@ swcMemMan reconfigureArenas(swcMemMan* manager)
         //actually change storage here
         if(root->size != 0)
         {
-            swcName* curName = (swcName*)alloc(manager->arenas, sizeof(swcName));
+            swcNameStruct* curName = (swcNameStruct*)alloc(manager->arenas, sizeof(swcNameStruct));
             curName->name = root->name;
             curName->size = root->size;
             curName->par = parent;
