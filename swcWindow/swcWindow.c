@@ -5,7 +5,7 @@ uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
 uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t initialLayerCount);
 uint32_t delDiv(swcWin* win, swcName divName);
-uint32_t render();
+uint32_t render(swcWin* win);
 
 
 /**
@@ -483,6 +483,87 @@ uint32_t delDiv(swcWin* win, swcName divName)
 }
 
 /**
+ * @brief 
+ * 
+ * @param win 
+ * @return uint32_t 
+ */
+uint32_t render(swcWin* win)
+{   
+    //retrieving layers
+    swcArray* layers = retrieveArray(win->divLayers, win->manager);
+    layerToProgram* layerData;
+    layerData = (layerToProgram*)layers->data;
+
+    swcArray* layer;
+    nameToDiv* programGroup;
+
+    swcArray* divsArray;
+    swcName* divs;
+
+
+    glXMakeCurrent(win->dis, win->glWindow, win->glContext);
+    for(uint32_t i = 0; i < layers->curSize; i++)
+    {//iterate over layers
+        layer = retrieveArray(layerData[i].programGroups);
+        programGroup = (nameToDiv*)layer->data;
+        //load program
+        win->glPointers.sigUseProgram(programGroup->programName);
+        for(uint32_t j = 0; j < layer->curSize; j++)
+        {//iterate over program groups
+            divsArray = retrieveArray(programGroup[j].divs, win->manager);
+            divs = (swcName*)divsArray->data;
+            for(uint32_t k = 0; k < divsArray->curSize; k++)
+            {
+                //now render the div
+
+                /*
+                *
+                *   Okay this is the basic block of how to render an individual vertex buffer, or what need to be done to create one and load it into the program
+                * 
+                *   
+                    sigCreateVertexArrays(1, &vao);
+                    sigBindVertexArray(vao);
+
+                    // //bind attributes link program, and use
+                    // //i really need to make tyedefs for these functions so their readable
+                    sigVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
+
+                    float bdata[6][3] = 
+                    {
+                        {0.0, 1.0, 0.0},
+                        {-1.0, -1.0, 0.0},
+                        {1.0, -1.0, 0.0},
+                        {0.5, 1.0, 0.0},
+                        {1.0, -1.0, 0.0},
+                        {1.0, 1.0, 0.0},
+
+                    };
+
+                    sigBufferData(GL_ARRAY_BUFFER, sizeof(bdata), bdata, GL_DYNAMIC_DRAW);
+
+                    sigEnableVertexAttribArray(0);
+                * 
+                *
+                *   Obviosuly we do not need to create a new vertexobject each time a div is drawn, however I do not know exactly what sigEnableVertexAttribArray is... it might not be necessary, nor
+                *   do i really know what sigVertexAttribPointer is
+                *   okay i see, vertexattribpointer describes the type of data that will be contianed in the bound array, as you can see the first number is index, 0 i guess don't really understand what that means,
+                *   the second 3 is the amount of data points per vertex, 3 as in our case each point has 3 dimensions, 3rd the type of date GL_Floats, 4 the normalization, which should always b GL_TRUE, and the next two should always be 0
+                * 
+                *   i will get to this later
+                */
+
+
+            }
+        }
+    }
+
+    glXMakeCurrent(win->dis, None, NULL);
+    return 0;
+}
+
+
+/**
  * @brief at end because of nested function
  * 
  * @param win 
@@ -613,7 +694,4 @@ uint32_t handleEvents(swcWin* win)
     return 0;
 }
 
-uint32_t render()
-{
-    return 0;
-}
+
