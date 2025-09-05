@@ -10,8 +10,11 @@
 typedef void(*PointerCreateBuffers)(GLsizei size, GLuint* bufferArray);
 typedef void(*PointerBindBuffer)(GLenum type, GLuint buffer);
 typedef void(*PointerBufferData)(GLenum type, GLsizeiptr size, const void *bufferData, GLenum usage);//mutable
+typedef void(*PointerNamedBufferData)(GLuint buffer, GLsizeiptr size, const void* bufferData, GLenum usage);
 typedef void(*PointerBufferStorage)(GLenum type, GLsizeiptr size, const void *bufferData, GLbitfield flags);//immutable
+typedef void(*PointerNamedBufferStorage)(GLuint buffer, GLsizeiptr size, const void* bufferData, GLbitfield flags);
 typedef void(*PointerBufferSubData)(GLenum type, GLintptr offset, GLsizeiptr size, const void* bufferData);
+typedef void(*PointerNamedBufferSubData)(GLuint buffer, GLintptr offset, GLsizeiptr size, const void* bufferData);
 typedef void(*PointerDeleteBuffers)(GLsizei count, const GLuint* buffers);
 
 //shader
@@ -58,8 +61,11 @@ typedef struct{
     PointerCreateBuffers sigCreateBuffers;
     PointerBindBuffer sigBindBuffer;
     PointerBufferData sigBufferData;
+    PointerNamedBufferData sigNamedBufferData;
     PointerBufferStorage sigBufferStorage;
+    PointerNamedBufferStorage sigNamedBufferStorage;
     PointerBufferSubData sigBufferSubData;
+    PointerNamedBufferSubData sigNamedBufferSubData;
     PointerDeleteBuffers sigDeleteBuffers;
     PointerCreateShader sigCreateShader;
     PointerShaderSource sigShaderSource;

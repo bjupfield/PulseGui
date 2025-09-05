@@ -20,4 +20,6 @@ uint32_t retrieveGLFuncs(swcWin *win);
 
 uint32_t createProgram(const char pathName[256], swcWin* win);
 
+uint32_t glGenBuffer(swcWin* win);
+
 #endif

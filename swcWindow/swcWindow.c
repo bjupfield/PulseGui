@@ -317,6 +317,13 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
     tempNameToDivs = (nameToDiv*)swcAddArray(tempLayerToProgram->programGroups, *tempNameToDivs, nameToDivSorter, win->manager);
     if(tempNameToDivs->divs == NULL)
     {
+        //attach vertex buffer object to array
+        tempNameToDivs->vertexBufferObjectName = glGenBuffer(win);
+        if(tempNameToDivs->vertexBufferObjectName == 0)
+        {
+            return 0;
+        }
+        //allocate new array to hold divs, as it does not exist
         tempNameToDivs->divs = swcAllocArray(InitialProgramToDivSize, swcName, win->manager);
     }
     
@@ -456,7 +463,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent,
  * @return uint32_t || Deleted div name if success if fail 0
  */
 uint32_t delDiv(swcWin* win, swcName divName)
-{//TODO: remove all references
+{
 
     swcDiv* div = (swcDiv*)retrieveName(divName, win->manager);
     if(div == 0)
@@ -482,6 +489,12 @@ uint32_t delDiv(swcWin* win, swcName divName)
     return success;
 }
 
+struct programGPUStorageUpdated
+{
+    uint32_t layer;
+    uint32_t program;
+    uint32_t newGPUStorageSize;
+};
 /**
  * @brief 
  * 
@@ -495,68 +508,129 @@ uint32_t render(swcWin* win)
     layerToProgram* layerData;
     layerData = (layerToProgram*)layers->data;
 
-    swcArray* layer;
-    nameToDiv* programGroup;
+    nameToDiv program;
+    int32_t j, i;
 
-    swcArray* divsArray;
-    swcName* divs;
+    struct programGPUStorageUpdated *newStorage = (struct programGPUStorageUpdated*)allocSB(sizeof(struct programGPUStorageUpdate) * (1 + win->render.bufferDataChanged->vertexBufferObjectName), win->manager);  
 
 
     glXMakeCurrent(win->dis, win->glWindow, win->glContext);
-    for(uint32_t i = 0; i < layers->curSize; i++)
-    {//iterate over layers
-        layer = retrieveArray(layerData[i].programGroups);
-        programGroup = (nameToDiv*)layer->data;
-        //load program
-        win->glPointers.sigUseProgram(programGroup->programName);
-        for(uint32_t j = 0; j < layer->curSize; j++)
-        {//iterate over program groups
-            divsArray = retrieveArray(programGroup[j].divs, win->manager);
-            divs = (swcName*)divsArray->data;
-            for(uint32_t k = 0; k < divsArray->curSize; k++)
-            {
-                //now render the div
-
-                /*
-                *
-                *   Okay this is the basic block of how to render an individual vertex buffer, or what need to be done to create one and load it into the program
-                * 
-                *   
-                    sigCreateVertexArrays(1, &vao);
-                    sigBindVertexArray(vao);
-
-                    // //bind attributes link program, and use
-                    // //i really need to make tyedefs for these functions so their readable
-                    sigVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
-
-                    float bdata[6][3] = 
-                    {
-                        {0.0, 1.0, 0.0},
-                        {-1.0, -1.0, 0.0},
-                        {1.0, -1.0, 0.0},
-                        {0.5, 1.0, 0.0},
-                        {1.0, -1.0, 0.0},
-                        {1.0, 1.0, 0.0},
-
-                    };
-
-                    sigBufferData(GL_ARRAY_BUFFER, sizeof(bdata), bdata, GL_DYNAMIC_DRAW);
-
-                    sigEnableVertexAttribArray(0);
-                * 
-                *
-                *   Obviosuly we do not need to create a new vertexobject each time a div is drawn, however I do not know exactly what sigEnableVertexAttribArray is... it might not be necessary, nor
-                *   do i really know what sigVertexAttribPointer is
-                *   okay i see, vertexattribpointer describes the type of data that will be contianed in the bound array, as you can see the first number is index, 0 i guess don't really understand what that means,
-                *   the second 3 is the amount of data points per vertex, 3 as in our case each point has 3 dimensions, 3rd the type of date GL_Floats, 4 the normalization, which should always b GL_TRUE, and the next two should always be 0
-                * 
-                *   i will get to this later
-                */
-
-
-            }
+    for(i = 1; i <= win->render.bufferDataChanged->vertexBufferObjectName; i++)//using first struct in struct list to hold the current element and max size of array
+    {
+        if(win->render.bufferDataChanged[i].gpuBufferDataSize >= win->render.bufferDataChanged[i].cpuBufferDataSize)
+        {
+            win->glPointers.sigNamedBufferSubData(win->render.bufferDataChanged[i].vertexBufferObjectName, 0, win->render.bufferDataChanged[i].gpuBufferDataSize, win->render.bufferDataChanged[i].cpuSideBufferObjectData);
+            
         }
+        else
+        {
+            win->glPointers.sigNamedBufferData(win->render.bufferDataChanged[i].vertexBufferObjectName, (uint32_t)((_Float32)(win->render.bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render.bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render.bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem)) , win->render.bufferDataChanged[i].cpuSideBufferObjectData, GL_DYNAMIC_DRAW);
+            //TODO: update the saved gpu size somehow...
+            newStorage->layer++;
+            newStorage[newStorage->layer].layer = win->render.bufferDataChanged[i].layer;
+            newStorage[newStorage->layer].newGPUStorageSize = (uint32_t)((_Float32)(win->render.bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render.bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render.bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem));
+            newStorage[newStorage->layer].program = win->render.bufferDataChanged[i].programName;
+        }
+        win->glPointers.sigUseProgram(win->render.bufferDataChanged[i].programName);
+        win->glPointers.sigBindBuffer(GL_ARRAY_BUFFER ,win->render.bufferDataChanged[i].vertexBufferObjectName);
+        glDrawArrays(GL_TRIANGLES, 0, win->render.bufferDataChanged->cpuBufferDataSize);
     }
+    for(i = 1; i <= newStorage->layer; i++)//same trick
+    {
+        layerData = (layerToProgram*)layers->data;
+        j = layerData->layer;
+        while(j != newStorage[i].layer)
+        {
+            j = ++layerData->layer;
+        }
+        program.programName = newStorage[i].program;
+        j = swcContainsArray(layerData->programGroups, program, nameToDivSorter, win->manager);
+        if(j == -1)
+        {
+            //should not occur something has crashed
+            //TODO:
+                //add a error log...
+        }
+        ((nameToDiv*)(layerData->programGroups, win->manager))[j].gpuBufferDataSize = newStorage[i].newGPUStorageSize;
+
+    }
+    /*
+    *   A comment on the above code... This should work, as you might notice we are using a literal pointer in this case to reference the cpu side changes...
+    *   as long as there is no mass reallocation of memory until after each render loop than this should not cause an issue, as every single time a cpu side buffer is changed it should
+    *   be able to store the correct pointer, even though it might look unsafe, it should be safe... again as long as any mass reallocation of memory is only done after each render loop, or 
+    *   a mass reallocation will restart the render loop
+    *  
+    */
+   /*
+   *    I AM SCRAPPING THE BELOW LOOPS, why
+   *    because as long as we use zbuffering we shouldn't need them... there are no camera changes so the position of these divs shouldn't actually change unless the above loop is changed
+   *    because of zbuffering the divs below other divs shouldn't override the frame static divs, so because of this these static divs do not need to be drawn, which means we don't even need the loop below but can just draw
+   *    everything based on the bufferdatachanged array vastly simplifieng the render pipeline, ill keep it commented for now just in case
+   */
+    // for(uint32_t i = 0; i < layers->curSize; i++)
+    // {//iterate over layers
+    //     layer = retrieveArray(layerData[i].programGroups);
+    //     programGroups = (nameToDiv*)layer->data;
+    //     for(uint32_t j = 0; j < layer->curSize; j++)
+    //     {
+    //         //load program
+    //         win->glPointers.sigUseProgram(programGroups[j].programName);
+    //         win->glPointers.sigBindBuffer(GL_ARRAY_BUFFER, programGroups[j].vertexBufferObjectName);
+    //         glDrawArrays(GL_TRIANGLES, ((fakeObject*)retrieveName(programGroups[j].cpuSideBufferObjectData))->vectorcount)//figure out size issues
+
+    //         /*
+    //         *   TODO:
+    //         *       Above I had to make a decision on how to render the divs, and the decision is over in what way would be faster to render the divs, use the name structure for reference to the draw arrays and 
+    //         *       use this to render the divs, or make something more like what is done abover in the first for loop to change the data held in the vertex buffers. the problem with the second option is that there
+    //         *       is no way to assure that all draw groups would be added to something like a win->render.drawArray without looping through every single layer and draw group like is done here. so the question is than:
+    //         *           is it more effecient to loop through these within the glDrawArrays rendering cycle, or would it be better to conduct this loop after/before the cycle?
+    //         *       obviously the second option would lead to a less efficient cpu side algo... but it might be more efficient for OpenGL to recieve all the draw commands immediately. Anyways, I have decided for now
+    //         *       that I will just use the more efficient cpu sided algo, hopefully its better
+    //         * 
+    //          */
+
+    //     }
+       
+                
+    //     //now render the div
+
+    //     /*
+    //     *
+    //     *   Okay this is the basic block of how to render an individual vertex buffer, or what need to be done to create one and load it into the program
+    //     * 
+    //     *   
+    //         sigCreateVertexArrays(1, &vao);
+    //         sigBindVertexArray(vao);
+
+    //         // //bind attributes link program, and use
+    //         // //i really need to make tyedefs for these functions so their readable
+    //         sigVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
+
+    //         float bdata[6][3] = 
+    //         {
+    //             {0.0, 1.0, 0.0},
+    //             {-1.0, -1.0, 0.0},
+    //             {1.0, -1.0, 0.0},
+    //             {0.5, 1.0, 0.0},
+    //             {1.0, -1.0, 0.0},
+    //             {1.0, 1.0, 0.0},
+    //         };
+
+    //         sigBufferData(GL_ARRAY_BUFFER, sizeof(bdata), bdata, GL_DYNAMIC_DRAW);
+
+    //         sigEnableVertexAttribArray(0);
+    //     * 
+    //     *
+    //     *   Obviosuly we do not need to create a new vertexobject each time a div is drawn, however I do not know exactly what sigEnableVertexAttribArray is... it might not be necessary, nor
+    //     *   do i really know what sigVertexAttribPointer is
+    //     *   okay i see, vertexattribpointer describes the type of data that will be contianed in the bound array, as you can see the first number is index, 0 i guess don't really understand what that means,
+    //     *   the second 3 is the amount of data points per vertex, 3 as in our case each point has 3 dimensions, 3rd the type of date GL_Floats, 4 the normalization, which should always b GL_TRUE, and the next two should always be 0
+    //     * 
+    //     *   i will get to this later
+    //     * 
+    //     *   also need to use glbindbuffer...
+    //     */
+    // }
 
     glXMakeCurrent(win->dis, None, NULL);
     return 0;

@@ -190,6 +190,14 @@ uint32_t attachShader(const char* pathName, uint32_t shaderType, uint32_t progra
     win->glPointers.sigDeleteShader(shader);
     return 1;
 }
+uint32_t glGenBuffer(swcWin* win)
+{
+    uint32_t bufferName;
+    glXMakeCurrent(win->dis, win->glWindow, win->glContext);
+    win->glPointers.sigCreateBuffers(1, &bufferName);
+    glXMakeContext(win->dis, NULL, NULL);
+    return bufferName;
+}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 //this is the first time I've actually used a macro
@@ -207,8 +215,11 @@ uint32_t retrieveGLFuncs(swcWin *win)
     procMacro(sigBindBuffer, "glBindBuffer", win->glPointers);
     procMacro(sigCreateBuffers, "glCreateBuffers", win->glPointers);
     procMacro(sigBufferData, "glBufferData", win->glPointers);
+    procMacro(sigNamedBufferData, "glNamedBufferData", win->glPointers);
     procMacro(sigBufferStorage, "glBufferStorage", win->glPointers);
+    procMacro(sigNamedBufferStorage, "glNamedBufferStorage", win->glPointers);
     procMacro(sigBufferSubData, "glBufferSubData", win->glPointers);
+    procMacro(sigNamedBufferSubData, "glNamedBufferSubData", win->glPointers);
     procMacro(sigDeleteBuffers, "glDeleteBuffers", win->glPointers);
 
     //shader

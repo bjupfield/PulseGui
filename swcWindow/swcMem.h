@@ -24,6 +24,11 @@ void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc s
 /**
  * @brief 0 if Failed | Pointer to Added/Retrieved If Success
  * 
+ * @param arrayName swcArrayName
+ * @param data the data that is being stored... not a pointer the actual data
+ * @param sorter sorter func to place the data inside the array
+ * @param manager the memorymanager...
+ * 
  */
 #define swcAddArray(arrayName, data, sorter, manager) \
         addArray(arrayName, sizeof(typeof(data)), &data, sorter, manager)
@@ -31,6 +36,11 @@ void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc s
 uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
 /**
  * @brief 0 if Failed | 1 if Success
+ *
+ *  @param arrayName swcArrayName
+ * @param data the data that is being stored... not a pointer the actual data
+ * @param sorter sorter func to place the data inside the array
+ * @param manager the memorymanager...
  * 
  */
 #define swcRemoveArray(arrayName, data, sorter, manager) \
@@ -38,6 +48,11 @@ uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sort
 int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager);
 /**
  * @brief -1 if Not Contained | Index if Contained
+ * 
+ * @param arrayName swcArrayName
+ * @param data the data that is being stored... not a pointer the actual data
+ * @param sorter sorter func to place the data inside the array
+ * @param manager the memorymanager...
  * 
  */
 #define swcContainsArray(arrayName, data, sorter, manager) \

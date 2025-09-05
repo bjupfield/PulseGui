@@ -18,6 +18,10 @@
 
 #define DefaultLayerCount 32
 
+//GpuStorageDefinitions
+#define AdditionalGpuMem 0.2f
+#define MaxAdditionalGpuMem 1000
+
 static uint32_t defConfiguration[] =
 {
     GLX_DOUBLEBUFFER, True,
@@ -97,9 +101,6 @@ typedef struct {
     swcArena doubleBuffer1; /* Don't Know if I'll use double buffers */
     swcArena doubleBuffer2;
     swcArena* curDB;
-    //TODO:
-    //I was thinkin gof how we want two different group iterators over the divs, one over event funcs and one for draw funcs
-    //the name tree needs to be made specifically for this, or something does
 }swcMemMan;
 
 /**
@@ -142,8 +143,6 @@ typedef uint32_t(*handlePointer)(uint32_t* divs, uint32_t divsSize, XEvent* even
 typedef struct {
     handlePointer func;
     swcArrayName divsName;
-    //TODO: add func that deletes div names in this container
-    //TODO: make divsName a swcNameArray
 }funcHandleArrays;
 /**
  * @brief Holds events, honestly i don't really know what this is doing to be honest
@@ -173,11 +172,45 @@ typedef struct {
     swcArrayName programGroups;
 }layerToProgram;
 
+/**
+ * @brief Probably thought about this for a little too much, ut I have decided that for updating and configuring
+ * data within the gpu instead of having individual divs update the data, which sounds extremely ineffecient, unless opengl uses a large
+ * buffer for updating these objects... but anyway im pretty sure it doesnt, so when the div updates its graphics or whatever it will
+ * change whatever its data is in the cpuSideBufferObjectDat, and it will notify the window.render.bufferDataChanged that the data has changed
+ * 
+ */
 typedef struct {
     uint32_t programName;
+    uint32_t vertexBufferObjectName;
+    uint32_t gpuBufferDataSize;
+    swcName cpuSideBufferObjectData;
     swcArrayName divs;
 }nameToDiv;
+/**
+ * @brief this is the data structure that will be held within the render structure, it will be referenced by a div whenver it updates its graphics, in doing so
+ * it will both store the vertexbufferobjectsname that it is attached to and pull change the cpusidebufferobjectdata and give a pointer to that data, obviously giving a pointer is a bit
+ * risky, but I think it works... as long as we only mass reallocate after any render cycles...
+ * 
+ */
+typedef struct
+{
+    uint32_t vertexBufferObjectName;
+    uint32_t gpuBufferDataSize;
+    uint32_t cpuBufferDataSize;
+    uint32_t programName;
+    void* cpuSideBufferObjectData;
 
+}bufferDataChanged;
+
+/**
+ * @brief 
+ * Struct used for organizational purposes within the window struct, basically it will contain all the references that are needed for rendering
+ * purposes for the window
+ */
+struct render
+{
+    bufferDataChanged* bufferDataChanged;//pointer to SB datablock where buffer names that were updated are stored, renewed every frame
+}render;
 /**
  * @brief This is the Window... Descriptions are below members
  * 
@@ -193,6 +226,7 @@ typedef struct {
     GLXWindow glWindow;
     swcArrayName glProgramNames;//array of program names
     swcArrayName divLayers;
+    struct render render;
     /*
     * Div Layers are used for rendering purposes, they control the z layer for div
     * The DivLayer Array is a reference to individual layer arrays
