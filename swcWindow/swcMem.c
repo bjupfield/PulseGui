@@ -739,3 +739,43 @@ uint32_t frameChange(swcMemMan* manager)
     }
     manager->curDB->beg = manager->curDB->origin;
 }
+
+/*
+*  SORTERS
+*  SORTERS
+*/
+uint32_t programNameSorter(void* left, void* right)
+{
+    programNames *leftP = (programNames*)left;
+    programNames *rightP = (programNames*)right;
+    uint8_t i = 0;
+    while(leftP->pathName[i] != rightP->pathName[i] || leftP->pathName[i] == '\n')
+    {
+        i++;
+    }
+    if(leftP->pathName[i] < rightP->pathName[i]) 
+        return 0;
+    if(leftP->pathName[i] == rightP->pathName[i])
+        return 1;
+    return 2;
+}
+uint32_t nameToDivSorter(void* left, void* right)
+{
+    uint32_t *leftN = (uint32_t*)left;
+    uint32_t *rightN = (uint32_t*)right;
+    if(*leftN < *rightN)
+        return 0;
+    if(*leftN == * rightN)
+        return 1;
+    return 2;
+}
+uint32_t handleSorter(void* left, void* right)
+{
+    uint64_t *leftN = (uint64_t*)left;
+    uint64_t *rightN = (uint64_t*)right;
+    if(*leftN < *rightN)
+        return 0;
+    if(*leftN == * rightN)
+        return 1;
+    return 2;
+}

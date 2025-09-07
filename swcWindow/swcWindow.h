@@ -8,6 +8,8 @@
 #include "swcDef.h"
 #include "swcMem.h"
 #include "swcBaseDivs.h"
+#include "swcDiv.h"
+#include "swcRender.h"
 #include "GLfuncs/glCreate.h"
 
 #define zLayers 10;

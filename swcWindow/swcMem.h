@@ -67,4 +67,11 @@ swcArena* addArena(size_t size, size_t minData, swcMemMan *manager);
 uint32_t frameChange(swcMemMan* manager);
 uint32_t freeMemMan(swcMemMan* manager);
 
+/*
+*       SORTERS
+*/
+uint32_t handleSorter(void* left, void* right);
+uint32_t nameToDivSorter(void* left, void* right);
+uint32_t programNameSorter(void* left, void* right);
+
 #endif
