@@ -195,7 +195,7 @@ uint32_t glGenBuffer(swcWin* win)
     uint32_t bufferName;
     glXMakeCurrent(win->dis, win->glWindow, win->glContext);
     win->glPointers.sigCreateBuffers(1, &bufferName);
-    glXMakeContext(win->dis, NULL, NULL);
+    glXMakeCurrent(win->dis, NULL, NULL);
     return bufferName;
 }
 #pragma GCC diagnostic push

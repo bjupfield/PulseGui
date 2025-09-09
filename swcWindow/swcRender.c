@@ -12,7 +12,7 @@ struct programGPUStorageUpdated
  * @param win 
  * @return uint32_t 
  */
-uint32_t render(swcWin* win)
+uint32_t renderMain(swcWin* win)
 {   
     //retrieving layers
     swcArray* layers = retrieveArray(win->divLayers, win->manager);
@@ -21,31 +21,34 @@ uint32_t render(swcWin* win)
 
     nameToDiv program;
     int32_t j, i;
+    struct programGPUStorageUpdated *newStorage;
+    uint32_t fake = sizeof(typeof(newStorage)) * (1 + win->render->bufferDataChangedElementCount);
 
-    struct programGPUStorageUpdated *newStorage = (struct programGPUStorageUpdated*)allocSB(sizeof(struct programGPUStorageUpdate) * (1 + win->render.bufferDataChanged->vertexBufferObjectName), win->manager);  
+    newStorage = (struct programGPUStorageUpdated*)allocSB(sizeof(typeof(newStorage)) * (1 + win->render->bufferDataChangedElementCount), win->manager);  
 
 
     glXMakeCurrent(win->dis, win->glWindow, win->glContext);
-    for(i = 1; i <= win->render.bufferDataChanged->vertexBufferObjectName; i++)//using first struct in struct list to hold the current element and max size of array
+    for(i = 0; i <= win->render->bufferDataChangedElementCount; i++)//using first struct in struct list to hold the current element and max size of array
     {
-        if(win->render.bufferDataChanged[i].gpuBufferDataSize >= win->render.bufferDataChanged[i].cpuBufferDataSize)
+        if(win->render->bufferDataChanged[i].gpuBufferDataSize >= win->render->bufferDataChanged[i].cpuBufferDataSize)
         {
-            win->glPointers.sigNamedBufferSubData(win->render.bufferDataChanged[i].vertexBufferObjectName, 0, win->render.bufferDataChanged[i].gpuBufferDataSize, win->render.bufferDataChanged[i].cpuSideBufferObjectData);
+            win->glPointers.sigNamedBufferSubData(win->render->bufferDataChanged[i].vertexBufferObjectName, 0, win->render->bufferDataChanged[i].gpuBufferDataSize, win->render->bufferDataChanged[i].cpuSideBufferObjectData);
             
         }
         else
         {
-            win->glPointers.sigNamedBufferData(win->render.bufferDataChanged[i].vertexBufferObjectName, (uint32_t)((_Float32)(win->render.bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render.bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render.bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem)) , win->render.bufferDataChanged[i].cpuSideBufferObjectData, GL_DYNAMIC_DRAW);
+            win->glPointers.sigNamedBufferData(win->render->bufferDataChanged[i].vertexBufferObjectName, (uint32_t)((_Float32)(win->render->bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render->bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render->bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem)) , win->render->bufferDataChanged[i].cpuSideBufferObjectData, GL_DYNAMIC_DRAW);
 
             newStorage->layer++;
-            newStorage[newStorage->layer].layer = win->render.bufferDataChanged[i].layer;
-            newStorage[newStorage->layer].newGPUStorageSize = (uint32_t)((_Float32)(win->render.bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render.bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render.bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem));
-            newStorage[newStorage->layer].program = win->render.bufferDataChanged[i].programName;
+            newStorage[newStorage->layer].layer = win->render->bufferDataChanged[i].layer;
+            newStorage[newStorage->layer].newGPUStorageSize = (uint32_t)((_Float32)(win->render->bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render->bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render->bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem));
+            newStorage[newStorage->layer].program = win->render->bufferDataChanged[i].programName;
         }
-        win->glPointers.sigUseProgram(win->render.bufferDataChanged[i].programName);
-        win->glPointers.sigBindBuffer(GL_ARRAY_BUFFER ,win->render.bufferDataChanged[i].vertexBufferObjectName);
-        glDrawArrays(GL_TRIANGLES, 0, win->render.bufferDataChanged->cpuBufferDataSize);
+        win->glPointers.sigUseProgram(win->render->bufferDataChanged[i].programName);
+        win->glPointers.sigBindBuffer(GL_ARRAY_BUFFER ,win->render->bufferDataChanged[i].vertexBufferObjectName);
+        glDrawArrays(GL_TRIANGLES, 0, win->render->bufferDataChanged->cpuBufferDataSize);
     }
+    glXSwapBuffers(win->dis, win->glWindow);
     for(i = 1; i <= newStorage->layer; i++)//same trick
     {
         layerData = (layerToProgram*)layers->data;
@@ -150,12 +153,20 @@ uint32_t render(swcWin* win)
  * @brief Set up for render loop, done at start of window loop or something, like it sets up the renderbuffer right now
  * 
  * @param win 
- * @return uint32_t 
+ * @return Returns 1 upon Success | 0 on Fail 
  */
 uint32_t preRender(swcWin* win)
-{   
-    
-    win->render.bufferDataChanged = allocSB(sizeof(bufferDataChanged) * , win->manager);
+{   win->render = (struct render*)allocSB(sizeof(struct render), win->manager);
+    win->render->bufferDataChangedElementCount = 0;
+    swcArray *programArray = (swcArray*)retrieveArray(win->glProgramNames, win->manager);//grab the current program count
+    swcArray *layerArray = (swcArray*)retrieveArray(win->divLayers, win->manager);//grab the layer count
+    win->render->bufferDataChangedSize = (uint32_t)((float)programArray->curSize * layerArray->curSize);//allow for more programs to be updated than currently exist, this should be excessive
+    win->render->bufferDataChanged = allocSB(sizeof(bufferDataChanged) * win->render->bufferDataChangedSize, win->manager);
+    if(win->render->bufferDataChanged == NULL)
+    {
+        return 0;
+    }
+    return 1;
 }
 /**
  * @brief Use to update the render buffer after any div changes their graphics state
@@ -166,18 +177,36 @@ uint32_t preRender(swcWin* win)
  * @param cpuBufferDataSize 
  * @param programName 
  * @param cpuSideBufferObjectData 
- * @return uint32_t 
+ * @return 1 upon success | 0 Upon failure
  */
-uint32_t updateRenderBuffer(swcWin* win ,uint32_t vertexBufferObjectName, uint32_t gpuBufferDataSize, uint32_t cpuBufferDataSize, uint32_t programName, void* cpuSideBufferObjectData)
+uint32_t updateRenderBuffer(swcWin* win ,uint32_t vertexBufferObjectName, uint32_t gpuBufferDataSize, uint32_t cpuBufferDataSize, uint32_t programName, uint32_t layer, void* cpuSideBufferObjectData)
 {
 
-    win->render.bufferDataChanged->vertexBufferObjectName++;
-
-    win->render.bufferDataChanged[win->render.bufferDataChanged->vertexBufferObjectName].vertexBufferObjectName = vertexBufferObjectName;
-    win->render.bufferDataChanged[win->render.bufferDataChanged->vertexBufferObjectName].gpuBufferDataSize = gpuBufferDataSize;
-    win->render.bufferDataChanged[win->render.bufferDataChanged->vertexBufferObjectName].cpuBufferDataSize = cpuBufferDataSize;
-    win->render.bufferDataChanged[win->render.bufferDataChanged->vertexBufferObjectName].programName = programName;
-    win->render.bufferDataChanged[win->render.bufferDataChanged->vertexBufferObjectName].cpuSideBufferObjectData = cpuSideBufferObjectData;
+    //this doesnt work either... need to search buffer to find 
+    uint32_t i = 0;
+    for(i; i < win->render->bufferDataChangedElementCount; i++)
+    {
+        if(win->render->bufferDataChanged[i].programName == programName && win->render->bufferDataChanged[i].layer == layer)
+        {
+            break;
+        }
+    }
+    
+    if(i == win->render->bufferDataChangedElementCount)
+    {
+        win->render->bufferDataChangedElementCount++;
+        if(i + 1 > win->render->bufferDataChangedSize)
+        {
+            //TODO: add more space
+            return 0;
+        }
+    }
+    win->render->bufferDataChanged[i].vertexBufferObjectName = vertexBufferObjectName;
+    win->render->bufferDataChanged[i].gpuBufferDataSize = gpuBufferDataSize;
+    win->render->bufferDataChanged[i].cpuBufferDataSize = cpuBufferDataSize;
+    win->render->bufferDataChanged[i].programName = programName;
+    win->render->bufferDataChanged[i].cpuSideBufferObjectData = cpuSideBufferObjectData;
+    win->render->bufferDataChanged[i].layer = layer;
 
     return 0;
 }

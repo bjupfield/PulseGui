@@ -42,4 +42,13 @@ uint32_t initDiv(swcWin* win, uint32_t parent,
     resizePointer resizeFunc, handlePointer eventFunc, size_t size,
     uint32_t eventTypeMask, const char pathName[256], void* excData);
 
+
+uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256], swcWin* win);
+
+uint32_t removeFromProgram(swcName divName, uint32_t programName, uint32_t layer, swcWin* win);
+
+uint32_t addToEvents(swcName divName, uint32_t eventMask, uintptr_t func, swcWin* win);
+
+uint32_t removeFromEvents(swcName divName, uint32_t eventMask, uintptr_t func, swcWin* win);
+
 #endif

@@ -3,6 +3,7 @@
 
 #include "swcDef.h"
 #include "swcMem.h"
+#include "swcWindow.h"
 #include "GLfuncs/glCreate.h"
 
 uint32_t initDiv(swcWin* win, uint32_t parent, 

@@ -4,7 +4,6 @@ uint32_t eventHandler(swcWin* win);
 uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
 uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t initialLayerCount);
-uint32_t render(swcWin* win);
 
 
 /**
@@ -74,8 +73,9 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //main loop? 
     for(uint64_t i = 0; i < 2000000; i++)
     {
+        preRender((swcWin*)retrieveName(windowName, &manager));
         handleEvents((swcWin*)retrieveName(windowName, &manager));
-        render();
+        renderMain((swcWin*)retrieveName(windowName, &manager));
         frameChange(&manager);
     }
 

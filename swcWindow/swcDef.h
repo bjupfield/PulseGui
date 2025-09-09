@@ -198,6 +198,7 @@ typedef struct
     uint32_t gpuBufferDataSize;
     uint32_t cpuBufferDataSize;
     uint32_t programName;
+    uint32_t layer;
     void* cpuSideBufferObjectData;
 
 }bufferDataChanged;
@@ -209,8 +210,10 @@ typedef struct
  */
 struct render
 {
+    uint32_t bufferDataChangedSize;
+    uint32_t bufferDataChangedElementCount;
     bufferDataChanged* bufferDataChanged;//pointer to SB datablock where buffer names that were updated are stored, renewed every frame
-}render;
+};
 /**
  * @brief This is the Window... Descriptions are below members
  * 
@@ -226,7 +229,7 @@ typedef struct {
     GLXWindow glWindow;
     swcArrayName glProgramNames;//array of program names
     swcArrayName divLayers;
-    struct render render;
+    struct render *render;
     /*
     * Div Layers are used for rendering purposes, they control the z layer for div
     * The DivLayer Array is a reference to individual layer arrays
