@@ -38,6 +38,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //add memory space to the manager and add the windows space too it
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
     swcName windowName = allocNamed(sizeof(swcWin), &manager);
+    ((swcWin*)retrieveName(windowName, &manager))->name = windowName;
 
     //itiitalize gl window data into window space
     if(!glInitWindowT(display, config, (swcWin*)retrieveName(windowName, &manager), eventMask))
@@ -59,6 +60,8 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize, (layerCount == 0 ? DefaultLayerCount : layerCount)); 
     ((swcWin*)retrieveName(windowName, &manager))->eventGroups = initEventGroups(((swcWin*)retrieveName(windowName, &manager)), eventMask, InitialEventToHandleSize);
 
+    preRender((swcWin*)retrieveName(windowName, &manager));
+
     //fake div creation
     char exampleVertPath[256] = "GlShaders/exampleVert.vert\0";
     swcName divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, 1, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, exampleVertPath, NULL);
@@ -68,15 +71,15 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     XFlush(((swcWin*)retrieveName(windowName, &manager))->dis);
 
     //test del div
-    delDiv(((swcWin*)retrieveName(windowName, &manager)), divName);
+    //delDiv(((swcWin*)retrieveName(windowName, &manager)), divName);
 
     //main loop? 
-    for(uint64_t i = 0; i < 2000000; i++)
+    for(uint64_t i = 0; i < 400; i++)
     {
-        preRender((swcWin*)retrieveName(windowName, &manager));
         handleEvents((swcWin*)retrieveName(windowName, &manager));
         renderMain((swcWin*)retrieveName(windowName, &manager));
         frameChange(&manager);
+        preRender((swcWin*)retrieveName(windowName, &manager));
     }
 
 
@@ -309,6 +312,9 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
         }
         //allocate new array to hold divs, as it does not exist
         tempNameToDivs->divs = swcAllocArray(InitialProgramToDivSize, swcName, win->manager);
+        tempNameToDivs->cpuSideBufferObjectData = NULL;
+        tempNameToDivs->gpuBufferDataSize = 0;
+        tempNameToDivs->cpuBufferObjectDataElementCount = 0;
     }
     
 

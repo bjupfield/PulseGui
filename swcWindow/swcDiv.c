@@ -46,6 +46,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent,
     divPoint->size = size;
     divPoint->eventMask = eventTypeMask;
     divPoint->programName = addToProgram(div, layer, pathName, win);
+    divPoint->win = win;
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);
 
@@ -53,7 +54,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent,
     memcpy((char*)divPoint + sizeof(swcDiv), excData, excSize);
     
 
-    // divC(divPoint, onLoad);
+    divC(divPoint, onLoad);
 
     return div;
 
@@ -85,7 +86,7 @@ uint32_t delDiv(swcWin* win, swcName divName)
         return 0;
     }
 
-    if(!div->deleteFunc(div))
+    if(!(divC(div, deleteFunc)))
     {
         return 0;
     }

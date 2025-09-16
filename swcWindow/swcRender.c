@@ -1,11 +1,11 @@
 #include "swcRender.h"
 
-struct programGPUStorageUpdated
+typedef struct
 {
     uint32_t layer;
     uint32_t program;
     uint32_t newGPUStorageSize;
-};
+}programGPUStorageUpdated;
 /**
  * @brief 
  * 
@@ -21,10 +21,10 @@ uint32_t renderMain(swcWin* win)
 
     nameToDiv program;
     int32_t j, i;
-    struct programGPUStorageUpdated *newStorage;
+    programGPUStorageUpdated *newStorage;
     uint32_t fake = sizeof(typeof(newStorage)) * (1 + win->render->bufferDataChangedElementCount);
 
-    newStorage = (struct programGPUStorageUpdated*)allocSB(sizeof(typeof(newStorage)) * (1 + win->render->bufferDataChangedElementCount), win->manager);  
+    newStorage = (programGPUStorageUpdated*)allocSB(sizeof(typeof(newStorage)) * (1 + win->render->bufferDataChangedElementCount), win->manager);  
 
 
     glXMakeCurrent(win->dis, win->glWindow, win->glContext);
@@ -32,6 +32,7 @@ uint32_t renderMain(swcWin* win)
     {
         if(win->render->bufferDataChanged[i].gpuBufferDataSize >= win->render->bufferDataChanged[i].cpuBufferDataSize)
         {
+            //TODO: maybe find a way to not replace the whole data structure
             win->glPointers.sigNamedBufferSubData(win->render->bufferDataChanged[i].vertexBufferObjectName, 0, win->render->bufferDataChanged[i].gpuBufferDataSize, win->render->bufferDataChanged[i].cpuSideBufferObjectData);
             
         }
@@ -157,11 +158,18 @@ uint32_t renderMain(swcWin* win)
  */
 uint32_t preRender(swcWin* win)
 {   win->render = (struct render*)allocSB(sizeof(struct render), win->manager);
+    if(win->render == NULL)
+    {
+        return 0;
+    }
     win->render->bufferDataChangedElementCount = 0;
     swcArray *programArray = (swcArray*)retrieveArray(win->glProgramNames, win->manager);//grab the current program count
     swcArray *layerArray = (swcArray*)retrieveArray(win->divLayers, win->manager);//grab the layer count
-    win->render->bufferDataChangedSize = (uint32_t)((float)programArray->curSize * layerArray->curSize);//allow for more programs to be updated than currently exist, this should be excessive
+    uint32_t i = programArray->curSize * layerArray->curSize;
+
+    win->render->bufferDataChangedSize = i >= MinBufferDataChangedSize ? i : MinBufferDataChangedSize;//allow for more programs to be updated than currently exist, this should be excessive
     win->render->bufferDataChanged = allocSB(sizeof(bufferDataChanged) * win->render->bufferDataChangedSize, win->manager);
+
     if(win->render->bufferDataChanged == NULL)
     {
         return 0;

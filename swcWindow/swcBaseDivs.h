@@ -2,6 +2,8 @@
 #define SWCBASEDIVS_H
 
 #include "swcDef.h"
+#include "swcMem.h"
+#include "swcRender.h"
 
 extern funcPointer baseLoad;
 extern funcPointer baseDraw;

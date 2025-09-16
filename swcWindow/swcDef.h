@@ -18,6 +18,8 @@
 
 #define DefaultLayerCount 32
 
+#define MinBufferDataChangedSize 16
+
 //GpuStorageDefinitions
 #define AdditionalGpuMem 0.2f
 #define MaxAdditionalGpuMem 1000
@@ -182,6 +184,7 @@ typedef struct {
 typedef struct {
     uint32_t programName;
     uint32_t vertexBufferObjectName;
+    uint32_t cpuBufferObjectDataElementCount;
     uint32_t gpuBufferDataSize;
     swcName cpuSideBufferObjectData;
     swcArrayName divs;
@@ -219,6 +222,7 @@ struct render
  * 
  */
 typedef struct {
+    swcName name;
     Display* dis;
     Window mainWin;
     uint32_t event_mask;
@@ -256,8 +260,8 @@ typedef struct {
  */
 typedef struct swcDiv{
     swcWin* win;
-    uint32_t name;
-    uint32_t parent;
+    swcName name;
+    swcName parent;
     /*
     * Default Parent is the Root Node if No Parent is assigned
     */

@@ -6,6 +6,8 @@
 #include "swcWindow.h"
 #include "GLfuncs/glCreate.h"
 
+#define divC(div, func) div->func(div)
+
 uint32_t initDiv(swcWin* win, uint32_t parent, 
     uint32_t posx, uint32_t posy, uint32_t dimx, uint32_t dimy, uint32_t layer,  
     funcPointer onLoad, funcPointer drawFunc, funcPointer deleteFunc,

@@ -13,7 +13,6 @@
 #include "GLfuncs/glCreate.h"
 
 #define zLayers 10;
-#define divC(div, func) div->func(div)
 
 //TODO: 
 // DO SOMETHING ABOUT NO RETURN, I DON'T KNOW HOW TO HANDLE THIS
