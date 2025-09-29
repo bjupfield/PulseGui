@@ -231,6 +231,23 @@ typedef struct {
     glFuncPointers glPointers;
     GLXContext glContext;
     GLXWindow glWindow;
+    GLuint bigBufferName;/*
+    * One More Essay Incoming. Okay, we messed up. We thought the voa stored the buffer objects somehow, or no,
+    * we forgot to use voa to point towards buffer objects in our buffer objects... so instead we are going to 
+    * do the responsible thing and have one massive buffer object that every voa points too, so now we have to do like
+    * actual memory management inside the gpu... ugh
+    * okay so what we are doing is simple, first this big buffer will be managed in this way:
+    *  basically a big array with data points in two integers regarding where the storage stops for a particular voa and
+    *  where it ends, okay i guess this means i have to mention that we will still use voas for every single layer->program group
+    *  but these voas will all point to this massive single buffer whose memory will be handled by the window as a whole
+    *  like we said that memory will be handled with a simple array holding x,y information with the first being the starting position for empty memory space
+    *  and the second being the end of that empty memory space, actually for sorting purposes what we will do is create an object like so { a, b}
+    *  with a being the amount of memory that is availbale in that space and b being the starting position, so that we can sort and stuff. we will also hold the largest available memory space
+    *  size outside so we can say if you need to expand the memory space or not... yeah and than when we run out of memory space we reorganize it...
+    * to do this we have to discuss the voa
+    *  the voas will use the old structure for the buffers and just hold the voas current gpu memory storage inside it as well as the other memory
+    *  than to reorganize the memory structure we will just use this stuff to create a new memory buffer with very simple <3
+    */
     swcArrayName glProgramNames;//array of program names
     swcArrayName divLayers;
     struct render *render;

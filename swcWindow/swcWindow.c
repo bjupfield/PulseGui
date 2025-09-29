@@ -74,12 +74,14 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //delDiv(((swcWin*)retrieveName(windowName, &manager)), divName);
 
     //main loop? 
-    for(uint64_t i = 0; i < 400; i++)
+    for(uint64_t i = 0; i < 4000; i++)
     {
         handleEvents((swcWin*)retrieveName(windowName, &manager));
         renderMain((swcWin*)retrieveName(windowName, &manager));
         frameChange(&manager);
         preRender((swcWin*)retrieveName(windowName, &manager));
+        printf("hi");
+        fflush(stdout);
     }
 
 
