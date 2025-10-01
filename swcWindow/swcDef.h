@@ -21,8 +21,9 @@
 #define MinBufferDataChangedSize 16
 
 //GpuStorageDefinitions
-#define AdditionalGpuMem 0.2f
-#define MaxAdditionalGpuMem 1000
+#define AdditionalGpuMem 0.4f
+#define MaxAdditionalGpuMem 20000
+#define InitialGpuMem 10000
 
 static uint32_t defConfiguration[] =
 {
@@ -171,24 +172,24 @@ typedef struct {
 
 typedef struct {
     uint32_t layer;
-    swcArrayName programGroups;
-}layerToProgram;
+    swcArrayName divGroups;
+}layerToDivGroups;
 
 /**
  * @brief Probably thought about this for a little too much, ut I have decided that for updating and configuring
  * data within the gpu instead of having individual divs update the data, which sounds extremely ineffecient, unless opengl uses a large
  * buffer for updating these objects... but anyway im pretty sure it doesnt, so when the div updates its graphics or whatever it will
  * change whatever its data is in the cpuSideBufferObjectDat, and it will notify the window.render.bufferDataChanged that the data has changed
- * 
- */
+ * */
 typedef struct {
     uint32_t programName;
-    uint32_t vertexBufferObjectName;
-    uint32_t cpuBufferObjectDataElementCount;
+    uint32_t gpuBufferDataLocation;//"index" for position in gpu data block, to be used with namedbuffersubdata
     uint32_t gpuBufferDataSize;
+    uint32_t vertexBufferObjectName;
+    uint32_t cpuBufferObjectDataElementSize;
     swcName cpuSideBufferObjectData;
     swcArrayName divs;
-}nameToDiv;
+}divGroupGpu;
 /**
  * @brief this is the data structure that will be held within the render structure, it will be referenced by a div whenver it updates its graphics, in doing so
  * it will both store the vertexbufferobjectsname that it is attached to and pull change the cpusidebufferobjectdata and give a pointer to that data, obviously giving a pointer is a bit
@@ -218,6 +219,19 @@ struct render
     bufferDataChanged* bufferDataChanged;//pointer to SB datablock where buffer names that were updated are stored, renewed every frame
 };
 /**
+ * @brief 
+ * Struct used to hold all data related to gpuMem
+ * size is the size of the gpu in memory
+ * emptyMem is a sorted array of the empty memory space, with data stored as 2 uint32_t, with xy struct below, with the first x being
+ * the size of the memory space and the second being the position
+ */
+typedef struct
+{
+    GLuint bufferName;
+    uint32_t size;
+    swcArrayName emptyMem;
+}glBuffer;
+/**
  * @brief This is the Window... Descriptions are below members
  * 
  */
@@ -231,7 +245,10 @@ typedef struct {
     glFuncPointers glPointers;
     GLXContext glContext;
     GLXWindow glWindow;
-    GLuint bigBufferName;/*
+    swcArrayName glProgramNames;//array of program names
+    swcArrayName divLayers;
+    glBuffer glBuffer;
+    /*
     * One More Essay Incoming. Okay, we messed up. We thought the voa stored the buffer objects somehow, or no,
     * we forgot to use voa to point towards buffer objects in our buffer objects... so instead we are going to 
     * do the responsible thing and have one massive buffer object that every voa points too, so now we have to do like
@@ -248,8 +265,6 @@ typedef struct {
     *  the voas will use the old structure for the buffers and just hold the voas current gpu memory storage inside it as well as the other memory
     *  than to reorganize the memory structure we will just use this stuff to create a new memory buffer with very simple <3
     */
-    swcArrayName glProgramNames;//array of program names
-    swcArrayName divLayers;
     struct render *render;
     /*
     * Div Layers are used for rendering purposes, they control the z layer for div
@@ -314,5 +329,14 @@ typedef struct swcDiv{
 }swcDiv;
 
 
+/**
+ * @brief Just to use as an easy structure
+ * 
+ */
+typedef struct xy
+{
+    uint32_t x;
+    uint32_t y;
+}xy;
 
 #endif

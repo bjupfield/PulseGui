@@ -324,9 +324,7 @@ swcArrayName allocArray(uint32_t size, size_t dataSize, swcMemMan* manager)
     return ret; //hhmmmmm
 }
 /**
- * @brief Adds a value to name array checks to see if value has been added before... only single instances in this array
- * uses basic sorting algo to find if name has been added. If the same instance is added it returns that index, working
- * as a search algorithim as well.
+ * @brief Adds a value to name array with a binary sorting algo using the sorter func
  * 
  * @param arrayName Array name
  * @param name Name to add to Name array
@@ -368,10 +366,6 @@ void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc s
                 i -= c;
                 continue;
             }
-            if(sorter(data, (void*)(arrayData + (dataSize * (i - 1)))) == 1)
-            {
-                return (void*)(arrayData + (i - 1) * dataSize);
-            }
         }
         if(i <= sizeAr - 1)
         {
@@ -380,16 +374,33 @@ void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc s
                 i += c;
                 continue;
             }
-            if(sorter((void*)(arrayData + dataSize * i),data) == 1)
-            {
-                return (void*)(arrayData + i * dataSize);
-            }
         }
         break;
     }
-    if(sizeAr == (((uint32_t)(nameArray->size)) / (uint32_t)sizeof(uint32_t)) - 1)
+    return addAtArray(nameArray, dataSize, data, i, manager);
+}
+/**
+ * @brief Adds data at index, should only be used in conjuction with contains array, otherwise it will destroy the validity of the
+ * bin sort array
+ * 
+ * @param nameArray 
+ * @param dataSize 
+ * @param data 
+ * @param index 
+ * @param manager 
+ * @return void* 
+ */
+void* addAtArray(swcNameStruct *nameArray, uint32_t dataSize, void* data, uint32_t index, swcMemMan* manager)
+{
+    if(nameArray == NULL)
     {
-        //need to expand namearray
+        return 0;
+    }
+    swcArray *array = (swcArray*)nameArray->pointer;
+    
+    int32_t sizeAr = (int32_t)array->curSize;
+    if(sizeAr == (((uint32_t)(nameArray->size)) / (uint32_t)sizeof(dataSize)) - 1)
+    {
         if(!reallocNamed(nameArray->name, (uint32_t)((_Float32)nameArray->size * (_Float32)nameArrayReallocSize), manager, nameArray))
         {
             //TODO: handle memory overload.... explode for now
@@ -397,13 +408,15 @@ void* addArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc s
         }
     }
     array->curSize++;
-    while(sizeAr > (int64_t)i)
+    char* arrayData = array->data; 
+    while(sizeAr > (int64_t)index)
     {
         memcpy((void*)(arrayData + (sizeAr * dataSize)), (void*)(arrayData + ((sizeAr - 1) * dataSize)), dataSize);
         sizeAr--;
     }
-    memcpy((void*)(arrayData + i * dataSize), data, dataSize);
-    return (void*)(arrayData + i * dataSize);
+    memcpy((void*)(arrayData + index * dataSize), data, dataSize);
+    return (void*)(arrayData + index * dataSize);
+
 }
 
 /**
@@ -470,6 +483,30 @@ uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sort
     }
     return 1;
 }
+/**
+ * @brief Removes at index, only use in conjunction with contains, or some ethereal knowledge of the exact position in array
+ * 
+ * @param nameArray 
+ * @param dataSize 
+ * @param index 
+ * @param manager 
+ * @return 1 if Success | 0 if Failure
+ */
+uint32_t removeAtArray(swcNameStruct *nameArray, uint32_t dataSize, uint32_t index, swcMemMan* manager)
+{
+    if(nameArray == NULL)
+    {
+        return 0;
+    }
+    ((swcArray*)nameArray->pointer)->curSize -= 1;
+    char *arrayData = ((swcArray*)nameArray->pointer)->data;
+    while(index < ((swcArray*)nameArray->pointer)->curSize)
+    {
+        memcpy((void*)(arrayData + (index * dataSize)), (void*)(arrayData + ((index) * dataSize)), dataSize);
+        index++;
+    }
+    return 1;
+}
 
 /**
  * @brief Finds if array contains value
@@ -479,7 +516,7 @@ uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sort
  * @param data 
  * @param sorter 
  * @param manager 
- * @return -1 if Not or Failure | Index if Success
+ * @return -1 if Failure | Index if Found | -2 - Index if Not Found
  */
 int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
 {
@@ -527,8 +564,88 @@ int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sor
                 break;
             }
         }
-        return -1;
+        return -i - 2;
     }
+}
+/**
+ * @brief Retrieves the data based on sorter
+ * 
+ * @param arrayName 
+ * @param dataSize 
+ * @param data 
+ * @param sorter 
+ * @param manager 
+ * @return void* 0 if Failure | Pointer if Success
+ */
+void* retrieveDataArray(swcArrayName arrayName, uint32_t dataSize, void* data, sortFunc sorter, swcMemMan* manager)
+{
+    
+    swcNameStruct* nameArray = retrieveNameL(arrayName, manager);
+    if(nameArray == NULL)
+    {
+        return 0;
+    }
+    swcArray *array = (swcArray*)nameArray->pointer;
+    
+    int32_t sizeAr = (int32_t)array->curSize;
+    char* arrayData = array->data; 
+    
+    uint32_t i = sizeAr >> 1;
+    uint32_t c = i != 0 ? i : 1;
+    while(1)
+    {
+        if(c != 1)
+        {
+            c >>= 1;
+        }
+        if(i != 0)
+        {
+            if(!sorter(data, (void*)(arrayData + (dataSize * (i - 1)))))
+            {
+                i -= c;
+                continue;
+            }
+            if(sorter(data, (void*)(arrayData + (dataSize * (i - 1)))) == 1)
+            {
+                return (void*)(arrayData + (i - 1) * dataSize);
+            }
+        }
+        if(i <= sizeAr - 1)
+        {
+            if(!sorter((void*)(arrayData + dataSize * i), data))
+            {
+                i += c;
+                continue;
+            }
+            if(sorter((void*)(arrayData + dataSize * i),data) == 1)
+            {
+                return (void*)(arrayData + i * dataSize);
+            }
+        }
+        break;
+    }
+    return 0;
+}
+/**
+ * @brief Returns pointer to data of datatype datasize that is at location index, not safe, only use in conjunction with contains array
+ * 
+ * @param arrayName 
+ * @param dataSize 
+ * @param index 
+ * @param manager 
+ * @return void* 
+ */
+void* retrieveAtArray(swcNameStruct *nameArray, uint32_t dataSize, uint32_t index, swcMemMan* manager)
+{
+    if(nameArray == NULL)
+    {
+        return 0;
+    }
+    swcArray *array = (swcArray*)nameArray->pointer;   
+
+    char* arrayData = array->data;
+    return (void*)(arrayData + index * dataSize);
+ 
 }
 /**
  * @brief Returns Array if it exist, else return 0
@@ -759,7 +876,7 @@ uint32_t programNameSorter(void* left, void* right)
         return 1;
     return 2;
 }
-uint32_t nameToDivSorter(void* left, void* right)
+uint32_t uint32_tSorter(void* left, void* right)
 {
     uint32_t *leftN = (uint32_t*)left;
     uint32_t *rightN = (uint32_t*)right;
@@ -769,7 +886,7 @@ uint32_t nameToDivSorter(void* left, void* right)
         return 1;
     return 2;
 }
-uint32_t handleSorter(void* left, void* right)
+uint32_t uint64_tSorter(void* left, void* right)
 {
     uint64_t *leftN = (uint64_t*)left;
     uint64_t *rightN = (uint64_t*)right;

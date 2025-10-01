@@ -22,4 +22,6 @@ uint32_t createProgram(const char pathName[256], swcWin* win);
 
 uint32_t glGenBuffer(swcWin* win);
 
+uint32_t glInitBuffer(swcWin* win, uint32_t size);
+
 #endif

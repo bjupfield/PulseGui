@@ -82,6 +82,7 @@ typedef struct{
     PointerEnableVertexAttribArray sigEnableVertexAttribArray;
     PointerDisableVertexAttribArray sigDisableVertexAttribArray;
     PointerCreateProgram sigCreateProgram;
+    PointerCreateProgram sigGetError;
     PointerLinkProgram sigLinkProgram;
     PointerUseProgram sigUseProgram;
     PointerDeleteProgram sigDeleteProgram;

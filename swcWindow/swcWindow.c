@@ -170,15 +170,25 @@ uint32_t addToEvents(swcName divName, uint32_t eventMask, uintptr_t func, swcWin
         {
             
             funcHandleArrays fake = {(handlePointer)func, 0};
-            
-            funcHandleArrays *handle = swcAddArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager);
+            funcHandleArrays *handle;
 
-            if(handle->divsName == 0)
+            int32_t index = swcContainsArray(eventGroups->funcGroup[i], fake, uint64_tSorter, win->manager);
+            if(index == -1)
             {
-                //function div container did not exist, create
-                handle->divsName = swcAllocArray(InitialHandleToDivSize, swcArrayName, win->manager);
+                //TODO: failed
+                return 0; 
             }
-            swcArrayName *retName = swcAddArray(handle->divsName, divName, nameToDivSorter, win->manager);
+            else if(index > 0)
+            {
+                handle = swcRetrieveAtArray(eventGroups->funcGroup[i], funcHandleArrays, index, win->manager);
+            }
+            else
+            {
+                fake.divsName = swcAllocArray(InitialHandleToDivSize, swcArrayName, win->manager);
+                handle = swcAddAtArray(eventGroups->funcGroup[i], fake, -index - 2, win->manager);
+            }
+
+            swcArrayName *retName = swcAddArray(handle->divsName, divName, uint32_tSorter, win->manager);
             if(*retName != divName)
             {
                 //failed for some reason?
@@ -213,14 +223,20 @@ uint32_t removeFromEvents(swcName divName, uint32_t eventMask, uintptr_t func, s
         {
             
             funcHandleArrays fake = {(handlePointer)func, 0};
+            funcHandleArrays *handle;
 
-            if(!swcContainsArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager))
+            int32_t index = swcContainsArray(eventGroups->funcGroup[i], fake, uint64_tSorter, win->manager);
+            if(index >= 0)
             {
-                //function is not created under group continue (shouldnt ever occur but whatever)
+                handle = swcRetrieveAtArray(eventGroups->funcGroup[i], funcHandleArrays, index, win->manager);
+            }
+            else
+            {
+                //TODO: catch
+                //failed shouldn't occur
                 continue;
             }
-            funcHandleArrays *handle = swcAddArray(eventGroups->funcGroup[i], fake, handleSorter, win->manager);
-            if(!swcRemoveArray(handle->divsName, divName, nameToDivSorter, win->manager))
+            if(!swcRemoveArray(handle->divsName, divName, uint32_tSorter, win->manager))
             {
                 //div is not under function group (shouldnt ever occur)
                 continue;
@@ -242,13 +258,13 @@ uint32_t removeFromEvents(swcName divName, uint32_t eventMask, uintptr_t func, s
 uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t initialLayerCount)
 {
     win->glProgramNames = swcAllocArray(initialProgramCount, programNames, win->manager);
-    win->divLayers = swcAllocArray(initialLayerCount, layerToProgram, win->manager);
+    win->divLayers = swcAllocArray(initialLayerCount, layerToDivGroups, win->manager);
     for(uint32_t i = 0; i < initialLayerCount; i++)
     {
-        layerToProgram add;
+        layerToDivGroups add;
         add.layer = i;
-        add.programGroups = swcAllocArray(initialProgramCount, nameToDiv, win->manager);
-        swcAddArray(win->divLayers, add, nameToDivSorter, win->manager);
+        add.divGroups = swcAllocArray(initialProgramCount, divGroupGpu, win->manager);
+        swcAddArray(win->divLayers, add, uint32_tSorter, win->manager);
     }
     return 1;
 }
@@ -275,16 +291,25 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
 {
     programNames b;
     strcpy(b.pathName, pathName);
-    b.programName = 0;//hope it doesnt throw a 0 program name, fix later if a problem
-    programNames *retrieved = (programNames*)swcAddArray(win->glProgramNames, b, programNameSorter, win->manager);
-    if(retrieved == 0)
+    int32_t index = swcContainsArray(win->glProgramNames, b, programNameSorter, win->manager);
+    programNames *retrieved;
+    if(index == -1)
     {
-        //Failure has occured
+        //failure has occured
         return 0;
+    }
+    else if(index >= 0)
+    {
+        retrieved = (programNames*)swcRetrieveAtArray(win->glProgramNames, programNames, index, win->manager);
+    }
+    else
+    {
+        b.programName = createProgram(pathName, win);
+        retrieved = (programNames*)swcAddAtArray(win->glProgramNames, b, -index - 2, win->manager);
     }
 
     uint32_t programName;
-    nameToDiv holder;
+    divGroupGpu holder;
     if(retrieved->programName == 0)//program has not been assigned/created... create program
     {
         retrieved->programName = createProgram(pathName, win);
@@ -294,34 +319,44 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
     
 
     //retrieve layers programgroups
-    layerToProgram *tempLayerToProgram = (layerToProgram*)allocSB(sizeof(layerToProgram), win->manager);
+    layerToDivGroups *tempLayerToProgram = (layerToDivGroups*)allocSB(sizeof(layerToDivGroups), win->manager);
     tempLayerToProgram->layer = layer;
-    tempLayerToProgram = (layerToProgram*)swcAddArray(win->divLayers, *tempLayerToProgram, nameToDivSorter, win->manager);
+    tempLayerToProgram = (layerToDivGroups*)swcRetrieveArray(win->divLayers, *tempLayerToProgram, uint32_tSorter, win->manager);
     //currently not checking to see if a layer exist or not assuming it does
 
     //retrieve programsname divgroup
-    nameToDiv *tempNameToDivs = (nameToDiv*)allocSB(sizeof(nameToDiv), win->manager);;
+    divGroupGpu *tempNameToDivs = (divGroupGpu*)allocSB(sizeof(divGroupGpu), win->manager);
     tempNameToDivs->programName = programName;
-    tempNameToDivs->divs = NULL;
-    tempNameToDivs = (nameToDiv*)swcAddArray(tempLayerToProgram->programGroups, *tempNameToDivs, nameToDivSorter, win->manager);
-    if(tempNameToDivs->divs == NULL)
+    index = swcContainsArray(tempLayerToProgram->divGroups, *tempNameToDivs, uint32_tSorter, win->manager);
+    if(index == -1)
+    {
+        //failure has occured
+        return 0;
+    }
+    else if(index >= 0)
+    {
+        tempNameToDivs = (divGroupGpu*)swcRetrieveAtArray(tempLayerToProgram->divGroups, layerToDivGroups, index, win->manager);
+    }
+    else
     {
         //attach vertex buffer object to array
         tempNameToDivs->vertexBufferObjectName = glGenBuffer(win);
         if(tempNameToDivs->vertexBufferObjectName == 0)
         {
+            //no buffers?
             return 0;
         }
         //allocate new array to hold divs, as it does not exist
         tempNameToDivs->divs = swcAllocArray(InitialProgramToDivSize, swcName, win->manager);
         tempNameToDivs->cpuSideBufferObjectData = NULL;
         tempNameToDivs->gpuBufferDataSize = 0;
-        tempNameToDivs->cpuBufferObjectDataElementCount = 0;
+        tempNameToDivs->cpuBufferObjectDataElementSize = 0;
+
+        tempNameToDivs = (divGroupGpu*)swcAddAtArray(tempLayerToProgram->divGroups, *tempNameToDivs, -index - 2, win->manager);
     }
     
-
     //add this div to that layer->programgroup->divs array
-    if(swcAddArray(tempNameToDivs->divs, divName, nameToDivSorter, win->manager) != 0)
+    if(swcAddArray(tempNameToDivs->divs, divName, uint32_tSorter, win->manager) != 0)
     {
         return programName;
     }
@@ -332,29 +367,29 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
 
 uint32_t removeFromProgram(swcName divName, uint32_t programName, uint32_t layer, swcWin* win)
 {
-    layerToProgram tempLayer;
+    layerToDivGroups tempLayer;
     tempLayer.layer = layer;
-    uint32_t index = swcContainsArray(win->divLayers, tempLayer, nameToDivSorter, win->manager);
+    uint32_t index = swcContainsArray(win->divLayers, tempLayer, uint32_tSorter, win->manager);
     if(index == -1)
     {
         //layer does not exist
         return 0;
     }
     swcArray* arr = retrieveArray(win->divLayers, win->manager);
-    tempLayer = ((layerToProgram*)((retrieveArray(win->divLayers, win->manager))->data))[index];
+    tempLayer = ((layerToDivGroups*)((retrieveArray(win->divLayers, win->manager))->data))[index];
 
-    nameToDiv tempNameToDiv;
+    divGroupGpu tempNameToDiv;
     tempNameToDiv.programName = programName;
-    index = swcContainsArray(tempLayer.programGroups, tempNameToDiv, nameToDivSorter, win->manager);
-    if(index == -1)
+    index = swcContainsArray(tempLayer.divGroups, tempNameToDiv, uint32_tSorter, win->manager);
+    if(index < 0)
     {
         //program group in layer does not exist
         return 0;
     }
 
-    tempNameToDiv = ((nameToDiv*)((retrieveArray(tempLayer.programGroups, win->manager))->data))[index];
+    tempNameToDiv = ((divGroupGpu*)((retrieveArray(tempLayer.divGroups, win->manager))->data))[index];
     
-    return swcRemoveArray(tempNameToDiv.divs, divName, nameToDivSorter, win->manager);
+    return swcRemoveArray(tempNameToDiv.divs, divName, uint32_tSorter, win->manager);
     
 }
 

@@ -3,6 +3,7 @@
 
 #include "swcDef.h"
 #include "swcMem.h"
+#include "GLfuncs/glCreate.h"
 
 uint32_t renderMain(swcWin* win);
 uint32_t preRender(swcWin* win);

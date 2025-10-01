@@ -9,13 +9,12 @@ typedef struct testDataStructure
 
 uint32_t bOnLoad(swcDiv* div)
 {
-    printf("hi\n\n\n\nn\n\n\n\n\n\n\n\n\n\n\n");
 
     //must contian the divs layer, otherwise previous code has failed
-    layerToProgram temp = {.layer = div->layer};
-    temp = *((layerToProgram *)swcAddArray(div->win->divLayers, temp, nameToDivSorter, div->win->manager));//it should exist
-    nameToDiv temp2 = {.programName = div->programName};
-    nameToDiv *pointer = ((nameToDiv*)swcAddArray(temp.programGroups, temp2, nameToDivSorter, div->win->manager));//it should exist
+    layerToDivGroups temp = {.layer = div->layer};
+    temp = *((layerToDivGroups *)swcAddArray(div->win->divLayers, temp, uint32_tSorter, div->win->manager));//it should exist
+    divGroupGpu temp2 = {.programName = div->programName};
+    divGroupGpu *pointer = ((divGroupGpu*)swcAddArray(temp.divGroups, temp2, uint32_tSorter, div->win->manager));//it should exist
     if(pointer->cpuSideBufferObjectData == NULL)
     {
         pointer->cpuSideBufferObjectData = allocNamed(sizeof(testDataStructure) * 50 + sizeof(uint32_t), div->win->manager);
@@ -23,43 +22,43 @@ uint32_t bOnLoad(swcDiv* div)
     }
     swcNameStruct *dataName = retrieveNameL(pointer->cpuSideBufferObjectData, div->win->manager);
     testDataStructure* data = (testDataStructure*)dataName->pointer;
-    if(dataName->size / sizeof(testDataStructure) < pointer->cpuBufferObjectDataElementCount)
+    if(dataName->size / sizeof(testDataStructure) < pointer->cpuBufferObjectDataElementSize)
     {
         //explode ran out of space ignoring for now... just test smh
     }
     else
     {
         //first triangle
-        data[pointer->cpuBufferObjectDataElementCount].x = 0;
-        data[pointer->cpuBufferObjectDataElementCount].y = 0;
-        data[pointer->cpuBufferObjectDataElementCount].z = 0;
-        pointer->cpuBufferObjectDataElementCount += 1;
-        data[pointer->cpuBufferObjectDataElementCount].x = 0;
-        data[pointer->cpuBufferObjectDataElementCount].y = -1;
-        data[pointer->cpuBufferObjectDataElementCount].z = 0;
-        pointer->cpuBufferObjectDataElementCount += 1;
-        data[pointer->cpuBufferObjectDataElementCount].x = 1;
-        data[pointer->cpuBufferObjectDataElementCount].y = -1;
-        data[pointer->cpuBufferObjectDataElementCount].z = 0;
-        pointer->cpuBufferObjectDataElementCount += 1;
+        data[pointer->cpuBufferObjectDataElementSize].x = 0;
+        data[pointer->cpuBufferObjectDataElementSize].y = 0;
+        data[pointer->cpuBufferObjectDataElementSize].z = 0;
+        pointer->cpuBufferObjectDataElementSize += 1;
+        data[pointer->cpuBufferObjectDataElementSize].x = 0;
+        data[pointer->cpuBufferObjectDataElementSize].y = -1;
+        data[pointer->cpuBufferObjectDataElementSize].z = 0;
+        pointer->cpuBufferObjectDataElementSize += 1;
+        data[pointer->cpuBufferObjectDataElementSize].x = 1;
+        data[pointer->cpuBufferObjectDataElementSize].y = -1;
+        data[pointer->cpuBufferObjectDataElementSize].z = 0;
+        pointer->cpuBufferObjectDataElementSize += 1;
         
         //have to make three to render smh
         //second triangle
-        data[pointer->cpuBufferObjectDataElementCount].x = div->posx + div->dimx;
-        data[pointer->cpuBufferObjectDataElementCount].y = div->posy;
-        data[pointer->cpuBufferObjectDataElementCount].z = div->layer;
-        pointer->cpuBufferObjectDataElementCount += 1;
-        data[pointer->cpuBufferObjectDataElementCount].x = div->posx;
-        data[pointer->cpuBufferObjectDataElementCount].y = div->posy - div->dimy;
-        data[pointer->cpuBufferObjectDataElementCount].z = div->layer;
-        pointer->cpuBufferObjectDataElementCount += 1;
-        data[pointer->cpuBufferObjectDataElementCount].x = div->posx + div->dimx;
-        data[pointer->cpuBufferObjectDataElementCount].y = div->posy - div->dimy;
-        data[pointer->cpuBufferObjectDataElementCount].z = div->layer;
-        pointer->cpuBufferObjectDataElementCount += 1;
+        data[pointer->cpuBufferObjectDataElementSize].x = div->posx + div->dimx;
+        data[pointer->cpuBufferObjectDataElementSize].y = div->posy;
+        data[pointer->cpuBufferObjectDataElementSize].z = div->layer;
+        pointer->cpuBufferObjectDataElementSize += 1;
+        data[pointer->cpuBufferObjectDataElementSize].x = div->posx;
+        data[pointer->cpuBufferObjectDataElementSize].y = div->posy - div->dimy;
+        data[pointer->cpuBufferObjectDataElementSize].z = div->layer;
+        pointer->cpuBufferObjectDataElementSize += 1;
+        data[pointer->cpuBufferObjectDataElementSize].x = div->posx + div->dimx;
+        data[pointer->cpuBufferObjectDataElementSize].y = div->posy - div->dimy;
+        data[pointer->cpuBufferObjectDataElementSize].z = div->layer;
+        pointer->cpuBufferObjectDataElementSize += 1;
     }
 
-    updateRenderBuffer(div->win, pointer->vertexBufferObjectName, pointer->gpuBufferDataSize, pointer->cpuBufferObjectDataElementCount, div->programName, div->layer, data);
+    updateRenderBuffer(div->win, pointer->vertexBufferObjectName, pointer->gpuBufferDataSize, pointer->cpuBufferObjectDataElementSize, div->programName, div->layer, data);
     return 0;
 }
 funcPointer baseLoad = bOnLoad;

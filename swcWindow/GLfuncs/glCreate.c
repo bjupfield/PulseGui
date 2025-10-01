@@ -198,6 +198,30 @@ uint32_t glGenBuffer(swcWin* win)
     glXMakeCurrent(win->dis, NULL, NULL);
     return bufferName;
 }
+/**
+ * @brief Creates the buffer for the window, uses size parameter for initial memory storage
+ * a single buffer is used for memory
+ * 
+ * @param win 
+ * @return uint32_t 
+ */
+uint32_t glInitBuffer(swcWin* win, uint32_t size)
+{
+    uint32_t buffer;
+
+    win->glPointers.sigCreateBuffers(1, &buffer);
+
+    win->glPointers.sigNamedBufferData(buffer, size, NULL, GL_DYNAMIC_DRAW);
+
+    if(!(win->glPointers.sigGetError()))
+    {
+        //TODO: Log Event and put error checks elsewhere in gl code
+        return 0;
+    }
+
+    return buffer;
+
+}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 //this is the first time I've actually used a macro
@@ -293,5 +317,6 @@ uint32_t retrieveGLFuncs(swcWin *win)
 
     //querry
     procMacro(sigGetIntegerv, "glGetIntegerv", win->glPointers);
+    procMacro(sigGetError, "glGetError", win->glPointers);
 }
 #pragma GCC diagnostic pop

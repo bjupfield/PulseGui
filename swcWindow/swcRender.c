@@ -16,10 +16,10 @@ uint32_t renderMain(swcWin* win)
 {   
     //retrieving layers
     swcArray* layers = retrieveArray(win->divLayers, win->manager);
-    layerToProgram* layerData;
-    layerData = (layerToProgram*)layers->data;
+    layerToDivGroups* layerData;
+    layerData = (layerToDivGroups*)layers->data;
 
-    nameToDiv program;
+    divGroupGpu program;
     int32_t j, i;
     programGPUStorageUpdated *newStorage;
 
@@ -55,14 +55,14 @@ uint32_t renderMain(swcWin* win)
 
         for(i = 1; i <= newStorage->layer; i++)//using first struct in struct list to hold the current element and max size of array
         {
-            layerData = (layerToProgram*)layers->data;
+            layerData = (layerToDivGroups*)layers->data;
             j = layerData->layer;
             while(j != newStorage[i].layer)
             {
                 j = ++layerData->layer;
             }
             program.programName = newStorage[i].program;
-            j = swcContainsArray(layerData->programGroups, program, nameToDivSorter, win->manager);
+            j = swcContainsArray(layerData->divGroups, program, uint32_tSorter, win->manager);
             if(j == -1)
             {
                 //should not occur something has crashed
@@ -71,7 +71,7 @@ uint32_t renderMain(swcWin* win)
             }
             //its definitly the below line, what is this even
             
-            ((nameToDiv*)retrieveName(layerData->programGroups, win->manager))[j].gpuBufferDataSize = newStorage[i].newGPUStorageSize;
+            ((divGroupGpu*)retrieveName(layerData->divGroups, win->manager))[j].gpuBufferDataSize = newStorage[i].newGPUStorageSize;
 
         }
     }
@@ -146,4 +146,132 @@ uint32_t updateRenderBuffer(swcWin* win ,uint32_t vertexBufferObjectName, uint32
     win->render->bufferDataChanged[i].layer = layer;
 
     return 0;
+}
+/**
+ * @brief Initializes gpu memory to InitialGpuMem
+ * 
+ * @param win 
+ * @return 1 if Success | 0 if Failure
+ */
+uint32_t initGPUMemory(swcWin *win)
+{
+
+    GLuint buffer = glInitBuffer(win, InitialGpuMem);
+    if(buffer == 0)
+    {
+        return 0;
+    }
+    win->glBuffer.bufferName = buffer;
+    win->glBuffer.size = InitialGpuMem;
+
+    win->glBuffer.emptyMem = swcAllocArray(200, xy, win->manager);
+    if(win->glBuffer.emptyMem == 0)
+    {
+        return 0;
+    }
+    xy temp = {.x = InitialGpuMem, .y = 0};
+
+    swcAddArray(win->glBuffer.emptyMem,  temp, uint32_tSorter, win->manager);
+
+    return 1;
+}
+/**
+ * @brief Okay so to be clear this is an alloc function, it "allocated memory in the gpu"
+ * what this really means is that it checks to see if the gpu buffer has memory left, if it does
+ * it sets aside memory for the program group, if it doesnt it reallocs the buffer
+ * and reorders the memory within the buffer to take up as least space as possible (asssuming theres
+ * empty space due to deallocated memory)
+ * 
+ * @param win 
+ * @param size Bytes Size To Allocate
+ * @return uint32_t Memory Location | Very Trusting Drawing System Requires Correct Calls No Checks
+ */
+uint32_t gpuAlloc(swcWin *win, uint32_t size)
+{
+    xy fake = {.x = size, .y = 0};
+    uint32_t index = swcContainsArray(win->glBuffer.emptyMem, fake, uint32_tSorter, win->manager);
+    xy *real;
+    if(index == -1)
+    {
+        //failure
+        //TODO: fix
+        return 0;
+    }
+    else if (index >= 0)
+    {
+        //perfect memory location found... use
+        real =  swcRetrieveAtArray(win->glBuffer.emptyMem, xy, index, win->mainWin);
+        swcRemoveAtArray(win->glBuffer.emptyMem, xy, index, win->manager);//doesnt actually delete info... so we can checkily use the pointer in the next line
+        return real->y;
+    }
+    else
+    {
+        index = -index - 2;
+        uint32_t location;
+        //location not found, check index returned... because the index returned sorts on a index -1 and index
+        //loop that means that -index -2 returned should be either between that which is less than it and index -1 and that which is greater at the index
+        //position. This is two possibilities, either option 1 the index positiion contians enough space for the new allocation, or option 2 there is no index position
+        //as it reached the end of the array. For option 1 the array retrieves the pointer to that location, it than deletes that location. Than it saves the 
+        //position in memory that location describes, than it calculates the empty space remaining from that location and reinserts that into the array, than returning
+        //the saved position. For option 2 it means there is not enough space left in gpu buffer, meaning it needs to be reallocated.
+        swcNameStruct *emptyMem = retrieveNameL(win->glBuffer.emptyMem, win->manager);
+        if(((swcArray*)emptyMem->pointer)->curSize <= index)
+        {
+            //this is a rather large operation it probably shouldn't be done often
+            //needs to reallocate whole gpu buffer
+            win->glBuffer.size = (uint32_t)((float)(win->glBuffer.size) * AdditionalGpuMem) > size ? 
+                ((uint32_t)(((float)win->glBuffer.size * AdditionalGpuMem) > MaxAdditionalGpuMem ? 
+                    win->glBuffer.size + MaxAdditionalGpuMem : 
+                    ((float)win->glBuffer.size * (1.0f + AdditionalGpuMem)))) : 
+                win->glBuffer.size + size * 2;
+            
+            win->glPointers.sigNamedBufferData(win->glBuffer.bufferName, (GLsizeiptr)win->glBuffer.size, NULL, GL_DYNAMIC_DRAW);
+            
+            deallocNamed(win->glBuffer.emptyMem, win->manager);
+            win->glBuffer.emptyMem = swcAllocArray(200, xy, win->manager);
+            xy fake = {.x = size, .y = 0};
+            swcAddArray(win->glBuffer.emptyMem, fake, uint32_tSorter, win->manager);
+
+            emptyMem = retrieveNameL(win->glBuffer.emptyMem, win->manager);
+            real = retrieveAtArray(emptyMem, sizeof(xy), 0, win->manager);
+
+            swcArray *divLayers = retrieveArray(win->divLayers, win->manager);
+            swcArray* divGroups;
+            for(int i = 0; i < divLayers->curSize; i++)
+            {
+                divGroups = retrieveArray(((layerToDivGroups*)(divLayers->data))[i].divGroups, win->manager);
+                for(int i = 0; i < divGroups->curSize; i++)
+                {
+                    ((divGroupGpu*)divGroups->data)[i].gpuBufferDataLocation = real->y;//continuely pushing the first empty memory space outward
+                    real->x = real->x - ((divGroupGpu*)divGroups->data)[i].gpuBufferDataSize;
+                    real->y = real->y + ((divGroupGpu*)divGroups->data)[i].gpuBufferDataSize;
+
+                    win->glPointers.sigNamedBufferSubData(win->glBuffer.bufferName, ((divGroupGpu*)divGroups->data)[i].gpuBufferDataLocation, 
+                    ((divGroupGpu*)divGroups->data)[i].cpuBufferObjectDataElementSize, retrieveName(((divGroupGpu*)divGroups->data)[i].cpuSideBufferObjectData, win->manager));
+                }
+            }
+
+            //adjust empty memory with newly allocated block and return location
+            location = real->y;
+            real->x = real->x - size;
+            real->y = real->y + size;
+
+            return location;
+
+        }
+        else
+        {
+            real = retrieveAtArray(emptyMem, sizeof(xy), index, win->manager);
+            location = real->y;
+
+            fake.x = real->x - size;
+            fake.y = real->y + size;
+
+            removeAtArray(emptyMem, sizeof(xy), index, win->manager);
+            swcAddArray(win->glBuffer.emptyMem, fake, uint32_tSorter, win->manager);
+
+            return location;
+        }
+    }
+
 }
