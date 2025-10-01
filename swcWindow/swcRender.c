@@ -171,7 +171,7 @@ uint32_t initGPUMemory(swcWin *win)
     }
     xy temp = {.x = InitialGpuMem, .y = 0};
 
-    swcAddArray(win->glBuffer.emptyMem,  temp, uint32_tSorter, win->manager);
+    swcAddArray(win->glBuffer.emptyMem,  temp, uint64_tSorter, win->manager);
 
     return 1;
 }
@@ -184,12 +184,12 @@ uint32_t initGPUMemory(swcWin *win)
  * 
  * @param win 
  * @param size Bytes Size To Allocate
- * @return uint32_t Memory Location | Very Trusting Drawing System Requires Correct Calls No Checks
+ * @return Memory Location | Very Trusting Drawing System Requires Correct Calls No Checks
  */
 uint32_t gpuAlloc(swcWin *win, uint32_t size)
 {
     xy fake = {.x = size, .y = 0};
-    uint32_t index = swcContainsArray(win->glBuffer.emptyMem, fake, uint32_tSorter, win->manager);
+    int32_t index = swcContainsArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
     xy *real;
     if(index == -1)
     {
@@ -200,9 +200,10 @@ uint32_t gpuAlloc(swcWin *win, uint32_t size)
     else if (index >= 0)
     {
         //perfect memory location found... use
-        real =  swcRetrieveAtArray(win->glBuffer.emptyMem, xy, index, win->mainWin);
-        swcRemoveAtArray(win->glBuffer.emptyMem, xy, index, win->manager);//doesnt actually delete info... so we can checkily use the pointer in the next line
-        return real->y;
+        real =  swcRetrieveAtArray(win->glBuffer.emptyMem, xy, index, win->manager);
+        fake.y = real->y;
+        swcRemoveAtArray(win->glBuffer.emptyMem, xy, index, win->manager);
+        return fake.y;
     }
     else
     {
@@ -230,7 +231,7 @@ uint32_t gpuAlloc(swcWin *win, uint32_t size)
             deallocNamed(win->glBuffer.emptyMem, win->manager);
             win->glBuffer.emptyMem = swcAllocArray(200, xy, win->manager);
             xy fake = {.x = size, .y = 0};
-            swcAddArray(win->glBuffer.emptyMem, fake, uint32_tSorter, win->manager);
+            swcAddArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
 
             emptyMem = retrieveNameL(win->glBuffer.emptyMem, win->manager);
             real = retrieveAtArray(emptyMem, sizeof(xy), 0, win->manager);
@@ -242,12 +243,15 @@ uint32_t gpuAlloc(swcWin *win, uint32_t size)
                 divGroups = retrieveArray(((layerToDivGroups*)(divLayers->data))[i].divGroups, win->manager);
                 for(int i = 0; i < divGroups->curSize; i++)
                 {
-                    ((divGroupGpu*)divGroups->data)[i].gpuBufferDataLocation = real->y;//continuely pushing the first empty memory space outward
-                    real->x = real->x - ((divGroupGpu*)divGroups->data)[i].gpuBufferDataSize;
-                    real->y = real->y + ((divGroupGpu*)divGroups->data)[i].gpuBufferDataSize;
+                    if(((divGroupGpu*)divGroups->data)[i].gpuBufferDataSize != 0)
+                    {
+                        ((divGroupGpu*)divGroups->data)[i].gpuBufferDataLocation = real->y;//continuely pushing the first empty memory space outward
+                        real->x = real->x - ((divGroupGpu*)divGroups->data)[i].gpuBufferDataSize;
+                        real->y = real->y + ((divGroupGpu*)divGroups->data)[i].gpuBufferDataSize;
 
-                    win->glPointers.sigNamedBufferSubData(win->glBuffer.bufferName, ((divGroupGpu*)divGroups->data)[i].gpuBufferDataLocation, 
-                    ((divGroupGpu*)divGroups->data)[i].cpuBufferObjectDataElementSize, retrieveName(((divGroupGpu*)divGroups->data)[i].cpuSideBufferObjectData, win->manager));
+                        win->glPointers.sigNamedBufferSubData(win->glBuffer.bufferName, ((divGroupGpu*)divGroups->data)[i].gpuBufferDataLocation, 
+                        ((divGroupGpu*)divGroups->data)[i].cpuBufferObjectDataElementSize, retrieveName(((divGroupGpu*)divGroups->data)[i].cpuSideBufferObjectData, win->manager));
+                    }
                 }
             }
 
@@ -268,10 +272,101 @@ uint32_t gpuAlloc(swcWin *win, uint32_t size)
             fake.y = real->y + size;
 
             removeAtArray(emptyMem, sizeof(xy), index, win->manager);
-            swcAddArray(win->glBuffer.emptyMem, fake, uint32_tSorter, win->manager);
+            swcAddArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
 
             return location;
         }
     }
 
+}
+/**
+ * @brief Reallocates Gpu Memory, same ystem as gpuAlloc
+ * 
+ * @param win window
+ * @param divGroupGpu I might change this to div, but I currently am operating on the assumption that it will be the divgroups that call for allocating and reallocating memory
+ * @param newSize byte size of memory to allocate
+ * @return Memory Location
+ */
+uint32_t gpuRealloc(swcWin* win, divGroupGpu* divGroupGpu, uint32_t newSize)
+{
+    gpuFree(win, divGroupGpu);
+
+    divGroupGpu->gpuBufferDataSize = 0;
+
+    return gpuAlloc(win, newSize);
+}
+/**
+ * @brief Frees memory, this does not delete current memory within the gpu, it just allocates that space to the empty space array
+ * 
+ * @param win 
+ * @param divGroupGpu As with realloc might change this to div, but probably not
+ * @return Returns 1 on success, there is no way for this to fail, unless the arrray does not exist, so just returning 1
+ */
+uint32_t gpuFree(swcWin* win, divGroupGpu* divGroupGpu)
+{
+    //checks for empty space ahead of the space we are emptying
+    swcNameStruct *emptyMemL = retrieveNameL(win->glBuffer.emptyMem, win->manager);
+    swcArray* emptyMem = (swcArray*)emptyMemL->pointer;
+    xy* data = (xy*)emptyMem->data;
+    uint32_t after = 0, before = 0;
+    for(uint32_t i = 0; i < emptyMem->curSize; i++)
+    {
+        if(data[i].y == divGroupGpu->gpuBufferDataLocation + divGroupGpu->gpuBufferDataSize)
+        {
+            //empty space comes immediately after this newly made empty space
+            after = i;
+        }
+        if(data[i].y + data[i].x == divGroupGpu->gpuBufferDataLocation)
+        {
+            before = i;
+        }
+        if(after && before)
+            break;
+    }
+
+    xy fake;
+    if(after && before)
+    {
+        xy fake2 = data[after];
+        fake.x = data[before].x + divGroupGpu->gpuBufferDataSize + fake2.x;
+        fake.y = data[before].y;
+        removeAtArray(emptyMemL, sizeof(xy), before, win->manager);
+
+        swcRemoveArray(win->glBuffer.emptyMem, fake2, uint64_tSorter, win->manager);
+
+        swcAddArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
+    }
+    else if(before)
+    {
+        fake.x = data[before].x + divGroupGpu->gpuBufferDataSize;
+        fake.y = data[before].y;
+        removeAtArray(emptyMemL, sizeof(xy), before, win->manager);
+
+        swcAddArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
+    }
+    else if(after)
+    {
+        fake.x = data[after].x + divGroupGpu->gpuBufferDataSize;
+        fake.y = divGroupGpu->gpuBufferDataLocation;
+        removeAtArray(emptyMemL, sizeof(xy), after, win->manager);
+
+        swcAddArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
+    }
+
+    return 1;
+}
+/**
+ * @brief Actually inserts the current divGroupGpu cpuSideBufferObjectData into the gpu, based of the assigned locatiopn and size
+ * 
+ * @param win 
+ * @param divGroupGpu 
+ * @return uint32_t 
+ */
+uint32_t insertGpuMem(swcWin* win, divGroupGpu* divGroupGpu)
+{
+    void* contianer = retrieveName(divGroupGpu->cpuSideBufferObjectData, win->manager);
+    if(contianer == NULL)
+        return 0;
+    win->glPointers.sigNamedBufferSubData(win->glBuffer.bufferName, divGroupGpu->gpuBufferDataLocation, divGroupGpu->gpuBufferDataSize, contianer);
+    return 1;
 }

@@ -369,7 +369,7 @@ uint32_t removeFromProgram(swcName divName, uint32_t programName, uint32_t layer
 {
     layerToDivGroups tempLayer;
     tempLayer.layer = layer;
-    uint32_t index = swcContainsArray(win->divLayers, tempLayer, uint32_tSorter, win->manager);
+    int32_t index = swcContainsArray(win->divLayers, tempLayer, uint32_tSorter, win->manager);
     if(index == -1)
     {
         //layer does not exist
