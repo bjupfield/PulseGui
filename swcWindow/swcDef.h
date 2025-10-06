@@ -168,6 +168,7 @@ typedef struct {//TODO: change evnt group to use swcArray
 typedef struct {
     char pathName[256];
     uint32_t programName;
+    uint32_t vaoName;
 }programNames;
 
 typedef struct {
@@ -198,11 +199,10 @@ typedef struct {
  */
 typedef struct
 {
-    uint32_t vertexBufferObjectName;
-    uint32_t gpuBufferDataSize;
-    uint32_t cpuBufferDataSize;
-    uint32_t programName;
+    uint32_t programName;//these two need to be in front for checks
     uint32_t layer;
+    uint32_t gpuOffset;
+    uint32_t dataSize;
     void* cpuSideBufferObjectData;
 
 }bufferDataChanged;
@@ -216,6 +216,7 @@ struct render
 {
     uint32_t bufferDataChangedSize;
     uint32_t bufferDataChangedElementCount;
+    uint32_t reallocAddedSize;
     bufferDataChanged* bufferDataChanged;//pointer to SB datablock where buffer names that were updated are stored, renewed every frame
 };
 /**

@@ -1,0 +1,17 @@
+okay this is the the three functions that are needed to establish a vao are
+
+vertexArrayVertexBuffer
+vertexAttribBinding
+vertexAttribFormat
+
+to query for vertex attributes locations we need
+getProgramiv
+getActiveAttrib
+getAttribLocation
+uniforms use instead
+getActiveUniform
+getUniformLocation
+
+will be using an alignment method so instead of having 30 different vaos for the same program with different objects 
+there can only be 1 vao for the same program with different objects, this will obviously make the memory a bit less effecient, will
+track the alignment padding space to see if its too much

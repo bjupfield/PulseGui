@@ -45,6 +45,13 @@ typedef void(*PointerUseProgram)(GLuint program);
 typedef void(*PointerDeleteProgram)(GLuint program);
 typedef void(*PointerGetProgramiv)(GLuint program, GLenum pname, GLint *params);
 typedef void(*PointerGetProgramInfoLog)(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+typedef void(*PointerVertexArrayAttribFormat)(GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset);
+
+//vao
+typedef void(*PointerGetActiveAttrib)(GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLint *size, GLenum *type, GLchar *name);
+typedef GLint(*PointerGetAttribLocation)(GLuint program, const GLchar *name);
+typedef void(*PointerVertexArrayAttribBinding)(GLuint vaobj, GLuint attribindex, GLuint bindingindex);
+typedef void(*PointerVertexArrayVertexBuffer)(GLuint vaobj, GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride);
 
 //uniforms
 typedef void(*PointerProgramUniform1f)(GLuint program, GLint location, GLfloat v0);
@@ -88,6 +95,11 @@ typedef struct{
     PointerDeleteProgram sigDeleteProgram;
     PointerGetProgramiv sigGetProgramiv;
     PointerGetProgramInfoLog sigGetProgramInfoLog;
+    PointerGetActiveAttrib sigGetActiveAttrib;
+    PointerGetAttribLocation sigGetAttribLocation;
+    PointerVertexArrayAttribBinding sigVertexArrayAttribBinding;
+    PointerVertexArrayVertexBuffer sigVertexArrayVertexBuffer;
+    PointerVertexArrayAttribFormat sigVertexArrayAttribFormat;
     PointerProgramUniform1f sigProgramUniform1f;
     PointerProgramUniform2f sigProgramUniform2f;
     PointerProgramUniform3f sigProgramUniform3f;
