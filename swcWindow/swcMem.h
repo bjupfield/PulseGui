@@ -111,6 +111,19 @@ void* retrieveAtArray(swcNameStruct *nameArray, uint32_t dataSize, uint32_t inde
 #define swcRetrieveAtArray(arrayName, type, index, manager) \
         retrieveAtArray(retrieveNameL(arrayName, manager), sizeof(type), index, manager)
 
+
+uint32_t replaceAtArray(swcArrayName nameArray, uint32_t dataSize, void* data, uint32_t index, swcMemMan* manager);
+/**
+ * @brief Replaces data at index of index, not expanding the array, but overwritting the data
+ * 
+ * @param arrayName swcArrayName
+ * @param data the data that is being stored, not pointer
+ * @param index index to insert at
+ * @param manager the memorymanager
+ * 
+ */
+#define swcReplaceAtArray(arrayName, data, index, manager) \
+        replaceAtArray(arrayName, sizeof(typeof(data)), &data, index, manager)
 swcArray* retrieveArray(swcArrayName name, swcMemMan* manager);
 
 void* allocSB(size_t size, swcMemMan* manager);
@@ -127,5 +140,6 @@ uint32_t freeMemMan(swcMemMan* manager);
 uint32_t uint64_tSorter(void* left, void* right);
 uint32_t uint32_tSorter(void* left, void* right);
 uint32_t programNameSorter(void* left, void* right);
+uint32_t flagged_uint32_tSorter(void* left, void* right);
 
 #endif

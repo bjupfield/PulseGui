@@ -358,7 +358,7 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
 
     //sigBindFragDataLocation(program, 0, "frag_color");
 
-    // /*
+    // /*[]
     // * create vao (vertex array object), which stores like the linking information for buffers and locations/indexes
     // * into a single object, so you can say this buffer will be attached to this index/location of a shader
     // * and store it inside this object

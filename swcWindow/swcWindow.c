@@ -64,7 +64,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     //fake div creation
     char exampleVertPath[256] = "GlShaders/exampleVert.vert\0";
-    swcName divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, 1, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), ButtonPressMask, exampleVertPath, NULL);
+    swcName divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, 1, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), 3, GL_TRIANGLES, ButtonPressMask, exampleVertPath, NULL);
 
     //mapping window and pushing to xorg... I think?
     XMapWindow(((swcWin*)retrieveName(windowName, &manager))->dis, ((swcWin*)retrieveName(windowName, &manager))->mainWin);
@@ -74,14 +74,12 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //delDiv(((swcWin*)retrieveName(windowName, &manager)), divName);
 
     //main loop? 
-    for(uint64_t i = 0; i < 4000; i++)
+    while(((swcWin*)retrieveName(windowName, &manager))->name != 0)
     {
         handleEvents((swcWin*)retrieveName(windowName, &manager));
         renderMain((swcWin*)retrieveName(windowName, &manager));
         frameChange(&manager);
         preRender((swcWin*)retrieveName(windowName, &manager));
-        printf("hi");
-        fflush(stdout);
     }
 
 
@@ -92,7 +90,9 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 uint32_t desWindow(swcWin* win)
 {
     //TODO: make this func? need to add something that deletes the divs
+    XUnmapWindow(win->dis, win->mainWin);
     XDestroyWindow(win->dis, win->mainWin);
+    XFlush(win->dis);
     freeMemMan(win->manager);
     return 1;
 }
@@ -287,7 +287,7 @@ uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t i
  * @param win 
  * @return 0 if Failure | Program Name if Success if Success
  */
-uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256], swcWin* win)
+uint32_t addToProgram(uint32_t initialDivEstimate, swcName divName, uint32_t layer, uint32_t vertexPerDiv, uint32_t renderType, const char pathName[256], swcWin* win)
 {
     programNames b;
     strcpy(b.pathName, pathName);
@@ -305,17 +305,10 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
     else
     {
         b.programName = createProgram(pathName, win);
+        createVAO(&b, win);
+        b.vertexPerObject = vertexPerDiv;
         retrieved = (programNames*)swcAddAtArray(win->glProgramNames, b, -index - 2, win->manager);
     }
-
-    uint32_t programName;
-    divGroupGpu holder;
-    if(retrieved->programName == 0)//program has not been assigned/created... create program
-    {
-        retrieved->programName = createProgram(pathName, win);
-        holder.divs = swcAllocArray(InitialProgramToDivSize, uint32_t, win->manager);    
-    }
-    programName = retrieved->programName;
     
 
     //retrieve layers programgroups
@@ -326,7 +319,7 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
 
     //retrieve programsname divgroup
     divGroupGpu *tempNameToDivs = (divGroupGpu*)allocSB(sizeof(divGroupGpu), win->manager);
-    tempNameToDivs->programName = programName;
+    tempNameToDivs->programName = retrieved->programName;
     index = swcContainsArray(tempLayerToProgram->divGroups, *tempNameToDivs, uint32_tSorter, win->manager);
     if(index == -1)
     {
@@ -340,25 +333,25 @@ uint32_t addToProgram(swcName divName, uint32_t layer, const char pathName[256],
     else
     {
         //attach vertex buffer object to array
-        tempNameToDivs->vertexBufferObjectName = glGenBuffer(win);
-        if(tempNameToDivs->vertexBufferObjectName == 0)
-        {
-            //no buffers?
-            return 0;
-        }
+        tempNameToDivs->vaoName = retrieved->vaoName;
         //allocate new array to hold divs, as it does not exist
-        tempNameToDivs->divs = swcAllocArray(InitialProgramToDivSize, swcName, win->manager);
-        tempNameToDivs->cpuSideBufferObjectData = NULL;
+        tempNameToDivs->divs = swcAllocArray(initialDivEstimate, flagged_uint32_t, win->manager);
+        tempNameToDivs->cpuSideBufferObjectData = allocArray(initialDivEstimate, retrieved->vaoAlignment * retrieved->vertexPerObject, win->manager);//TODO: not to certain about intialDivEstimate
         tempNameToDivs->gpuBufferDataSize = 0;
-        tempNameToDivs->cpuBufferObjectDataElementSize = 0;
+        tempNameToDivs->strideSize = retrieved->vaoAlignment;
+        tempNameToDivs->renderedDivsCount = 0;
+        tempNameToDivs->vertexCount = b.vertexPerObject;
+        tempNameToDivs->renderType = renderType;
 
         tempNameToDivs = (divGroupGpu*)swcAddAtArray(tempLayerToProgram->divGroups, *tempNameToDivs, -index - 2, win->manager);
+        //this works because this function copies the memory, it doesn't pass the pointer
     }
     
     //add this div to that layer->programgroup->divs array
-    if(swcAddArray(tempNameToDivs->divs, divName, uint32_tSorter, win->manager) != 0)
+    flagged_uint32_t flagged0Div = {.flag = 0, .x = divName};
+    if(swcAddArray(tempNameToDivs->divs, flagged0Div, flagged_uint32_tSorter, win->manager) != 0)
     {
-        return programName;
+        return tempNameToDivs->programName;
     }
 
     return 0;
@@ -427,7 +420,7 @@ uint32_t handleEvents(swcWin* win)
                         swcArray *names = retrieveArray(funcs2[c].divsName, win->manager);
                         swcName* divNames = allocSB(names->curSize, win->manager);
                         memcpy(divNames, names->data, names->curSize * sizeof(uint32_t));
-                        funcs2[c].func(divNames, names->curSize, &event); 
+                        funcs2[c].func(divNames, names->curSize, &event, win->manager); 
                     }
 
                     //I think a use of a goto __label__ here would be faster than returning to the switch and breaking

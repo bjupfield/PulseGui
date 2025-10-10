@@ -16,7 +16,8 @@
 
 #define InitialDivCount 512
 
-#define DefaultLayerCount 32
+#define DefaultLayerCount 4
+#define DefaultInitialDivGroupCount 16
 
 #define MinBufferDataChangedSize 16
 
@@ -141,7 +142,7 @@ struct swcDiv;
 
 typedef uint32_t(*funcPointer)(struct swcDiv*);
 typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t x, uint32_t y);
-typedef uint32_t(*handlePointer)(uint32_t* divs, uint32_t divsSize, XEvent* event);
+typedef uint32_t(*handlePointer)(uint32_t* divs, uint32_t divsSize, XEvent* event, swcMemMan* manager);
 
 typedef struct {
     handlePointer func;
@@ -169,6 +170,8 @@ typedef struct {
     char pathName[256];
     uint32_t programName;
     uint32_t vaoName;
+    uint32_t vaoAlignment;//total size of vao attributes/stride
+    uint32_t vertexPerObject;//total vertexes that an object("Div") will create
 }programNames;
 
 typedef struct {
@@ -176,6 +179,10 @@ typedef struct {
     swcArrayName divGroups;
 }layerToDivGroups;
 
+typedef struct {
+    uint8_t flag;
+    uint32_t x;
+}flagged_uint32_t;
 /**
  * @brief Probably thought about this for a little too much, ut I have decided that for updating and configuring
  * data within the gpu instead of having individual divs update the data, which sounds extremely ineffecient, unless opengl uses a large
@@ -186,9 +193,16 @@ typedef struct {
     uint32_t programName;
     uint32_t gpuBufferDataLocation;//"index" for position in gpu data block, to be used with namedbuffersubdata
     uint32_t gpuBufferDataSize;
-    uint32_t vertexBufferObjectName;
-    uint32_t cpuBufferObjectDataElementSize;
-    swcName cpuSideBufferObjectData;
+    uint32_t strideSize;/*
+    *   the amount size of a single block of data, as in a struct of data is usually an element
+    *   for storage in the cpu, the strideSize would be entire size of that struct, so each element within the
+    *   struct has a strideSize of the entire struct before getting to that element again
+    */
+    uint32_t vertexCount;//vertexes each div renders
+    uint32_t vaoName;
+    uint32_t renderedDivsCount;
+    uint16_t renderType;// the render mode, stores everything, patches vertices is specified by being render type - GL_PATCHES, as patches is the largest type possible 
+    swcArrayName cpuSideBufferObjectData;
     swcArrayName divs;
 }divGroupGpu;
 /**
@@ -308,7 +322,6 @@ typedef struct swcDiv{
     uint32_t dimy;
     uint32_t layer;// window layer div is assigned to
     uint32_t programName;
-    _Float32* vba;
     funcPointer drawFunc;
     funcPointer onLoad;
     funcPointer deleteFunc;//do not deallocate the div inside this func, used to dereference the div in any structures that might reference to it

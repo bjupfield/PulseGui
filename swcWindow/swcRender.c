@@ -49,7 +49,8 @@ uint32_t renderMain(swcWin* win)
                         real->y = real->y + ((divGroupGpu*)divGroups->data)[j].gpuBufferDataSize;
 
                         win->glPointers.sigNamedBufferSubData(win->glBuffer.bufferName, ((divGroupGpu*)divGroups->data)[j].gpuBufferDataLocation, 
-                        ((divGroupGpu*)divGroups->data)[j].cpuBufferObjectDataElementSize, retrieveName(((divGroupGpu*)divGroups->data)[j].cpuSideBufferObjectData, win->manager));
+                        ((divGroupGpu*)divGroups->data)[j].renderedDivsCount * ((divGroupGpu*)divGroups->data)[j].strideSize * ((divGroupGpu*)divGroups->data)[j].vertexCount, 
+                        (void *)(retrieveArray(((divGroupGpu*)divGroups->data)[j].cpuSideBufferObjectData, win->manager)->data));
                     }
                 }
             }
@@ -58,11 +59,41 @@ uint32_t renderMain(swcWin* win)
     {
         for(uint32_t i = 0; i < win->render->bufferDataChangedElementCount; i++)
         {
-            win->glPointers.sigNamedBufferSubData(win->glBuffer.bufferName, win->render->bufferDataChanged[i].gpuOffset, win->render->bufferDataChanged[i].dataSize, win->render->bufferDataChanged[i].cpuSideBufferObjectData);
+            //update gpu buffer
+            win->glPointers.sigNamedBufferSubData(win->glBuffer.bufferName, win->render->bufferDataChanged[i].gpuOffset, 
+            win->render->bufferDataChanged[i].dataSize, win->render->bufferDataChanged[i].cpuSideBufferObjectData);
+        }
+    }
+    //render
+    swcArray *layerArray = retrieveArray(win->divLayers, win->manager);
+    layerToDivGroups *divLayers = (layerToDivGroups*)layerArray->data;
+    swcArray *divGroupArray;
+    divGroupGpu *divGroup;
+    glViewport(0, 0, 1054, 1078);
+
+    glClearColor(.5, .5, .5, 1);
+    for(int32_t i = layerArray->curSize - 1; i >= 0; i--)
+    {
+        divGroupArray = retrieveArray(divLayers[i].divGroups, win->manager);
+        divGroup = (divGroupGpu*)divGroupArray->data;
+        for(uint32_t j = 0; j < divGroupArray->curSize; j++)
+        {
+            win->glPointers.sigBindVertexArray(divGroup[j].vaoName);
+            win->glPointers.sigUseProgram(divGroup[j].programName);
+            if(divGroup[j].renderType > GL_TRIANGLE_STRIP_ADJACENCY)
+            {
+                win->glPointers.sigPatchParameteri(GL_PATCH_VERTICES, divGroup[j].renderType - GL_TRIANGLE_STRIP_ADJACENCY);
+                glDrawArrays(GL_PATCHES, divGroup[j].gpuBufferDataLocation / divGroup[j].strideSize, divGroup[j].renderedDivsCount * divGroup[j].vertexCount);
+            }
+            else{
+                glDrawArrays(divGroup[j].renderType, divGroup[j].gpuBufferDataLocation / divGroup[j].strideSize, divGroup[j].renderedDivsCount * divGroup[j].vertexCount);
+            }
+            //TODO: rid the world of this func, and use a glpointer
+            
         }
     }
 
-
+    glXSwapBuffers(win->dis, win->glWindow);
 
 
 
@@ -91,66 +122,66 @@ uint32_t renderMain(swcWin* win)
 
     //fake old loop
     //retrieving layers
-    swcArray* layers = retrieveArray(win->divLayers, win->manager);
-    layerToDivGroups* layerData;
-    layerData = (layerToDivGroups*)layers->data;
+    // swcArray* layers = retrieveArray(win->divLayers, win->manager);
+    // layerToDivGroups* layerData;
+    // layerData = (layerToDivGroups*)layers->data;
 
-    divGroupGpu program;
-    int32_t j, i;
-    programGPUStorageUpdated *newStorage;
+    // divGroupGpu program;
+    // int32_t j, i;
+    // programGPUStorageUpdated *newStorage;
 
-    newStorage = (programGPUStorageUpdated*)allocSB(sizeof(programGPUStorageUpdated) * (1 + win->render->bufferDataChangedElementCount), win->manager);  
-    newStorage->layer = 0;
+    // newStorage = (programGPUStorageUpdated*)allocSB(sizeof(programGPUStorageUpdated) * (1 + win->render->bufferDataChangedElementCount), win->manager);  
+    // newStorage->layer = 0;
 
-    glXMakeCurrent(win->dis, win->glWindow, win->glContext);
-    for(i = 0; i < win->render->bufferDataChangedElementCount; i++)
-    {
-        if(win->render->bufferDataChanged[i].gpuBufferDataSize >= win->render->bufferDataChanged[i].cpuBufferDataSize)
-        {
-            //TODO: maybe find a way to not replace the whole data structure
-            win->glPointers.sigNamedBufferSubData(win->render->bufferDataChanged[i].vertexBufferObjectName, 0, win->render->bufferDataChanged[i].gpuBufferDataSize, win->render->bufferDataChanged[i].cpuSideBufferObjectData);
+    // glXMakeCurrent(win->dis, win->glWindow, win->glContext);
+    // for(i = 0; i < win->render->bufferDataChangedElementCount; i++)
+    // {
+    //     if(win->render->bufferDataChanged[i].gpuBufferDataSize >= win->render->bufferDataChanged[i].cpuBufferDataSize)
+    //     {
+    //         //TODO: maybe find a way to not replace the whole data structure
+    //         win->glPointers.sigNamedBufferSubData(win->render->bufferDataChanged[i].vaoName, 0, win->render->bufferDataChanged[i].gpuBufferDataSize, win->render->bufferDataChanged[i].cpuSideBufferObjectData);
             
-        }
-        else
-        {
-            win->glPointers.sigNamedBufferData(win->render->bufferDataChanged[i].vertexBufferObjectName, (uint32_t)((_Float32)(win->render->bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render->bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render->bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem)) , win->render->bufferDataChanged[i].cpuSideBufferObjectData, GL_DYNAMIC_DRAW);
+    //     }
+    //     else
+    //     {
+    //         win->glPointers.sigNamedBufferData(win->render->bufferDataChanged[i].vaoName, (uint32_t)((_Float32)(win->render->bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render->bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render->bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem)) , win->render->bufferDataChanged[i].cpuSideBufferObjectData, GL_DYNAMIC_DRAW);
 
-            newStorage->layer++;
-            newStorage[newStorage->layer].layer = win->render->bufferDataChanged[i].layer;
-            newStorage[newStorage->layer].newGPUStorageSize = (uint32_t)((_Float32)(win->render->bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render->bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render->bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem));
-            newStorage[newStorage->layer].program = win->render->bufferDataChanged[i].programName;
-        }
-        win->glPointers.sigUseProgram(win->render->bufferDataChanged[i].programName);
-        win->glPointers.sigBindBuffer(GL_ARRAY_BUFFER ,win->render->bufferDataChanged[i].vertexBufferObjectName);
-        win->glPointers.sigVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
-        glDrawArrays(GL_TRIANGLES, 0, win->render->bufferDataChanged[i].cpuBufferDataSize);
-    }
-    if(win->render->bufferDataChangedElementCount > 0)
-    {
-        glXSwapBuffers(win->dis, win->glWindow);
+    //         newStorage->layer++;
+    //         newStorage[newStorage->layer].layer = win->render->bufferDataChanged[i].layer;
+    //         newStorage[newStorage->layer].newGPUStorageSize = (uint32_t)((_Float32)(win->render->bufferDataChanged[i].cpuBufferDataSize) * AdditionalGpuMem > MaxAdditionalGpuMem ? win->render->bufferDataChanged[i].cpuBufferDataSize + MaxAdditionalGpuMem : (_Float32)win->render->bufferDataChanged[i].cpuBufferDataSize * (1 + AdditionalGpuMem));
+    //         newStorage[newStorage->layer].program = win->render->bufferDataChanged[i].programName;
+    //     }
+    //     win->glPointers.sigUseProgram(win->render->bufferDataChanged[i].programName);
+    //     win->glPointers.sigBindBuffer(GL_ARRAY_BUFFER ,win->render->bufferDataChanged[i].vaoName);
+    //     win->glPointers.sigVertexAttribPointer(0, 3, GL_FLOAT, GL_TRUE, 0, 0);
+    //     glDrawArrays(GL_TRIANGLES, 0, win->render->bufferDataChanged[i].cpuBufferDataSize);
+    // }
+    // if(win->render->bufferDataChangedElementCount > 0)
+    // {
+    //     glXSwapBuffers(win->dis, win->glWindow);
 
-        for(i = 1; i <= newStorage->layer; i++)//using first struct in struct list to hold the current element and max size of array
-        {
-            layerData = (layerToDivGroups*)layers->data;
-            j = layerData->layer;
-            while(j != newStorage[i].layer)
-            {
-                j = ++layerData->layer;
-            }
-            program.programName = newStorage[i].program;
-            j = swcContainsArray(layerData->divGroups, program, uint32_tSorter, win->manager);
-            if(j == -1)
-            {
-                //should not occur something has crashed
-                //TODO:
-                    //add a error log...
-            }
-            //its definitly the below line, what is this even
+    //     for(i = 1; i <= newStorage->layer; i++)//using first struct in struct list to hold the current element and max size of array
+    //     {
+    //         layerData = (layerToDivGroups*)layers->data;
+    //         j = layerData->layer;
+    //         while(j != newStorage[i].layer)
+    //         {
+    //             j = ++layerData->layer;
+    //         }
+    //         program.programName = newStorage[i].program;
+    //         j = swcContainsArray(layerData->divGroups, program, uint32_tSorter, win->manager);
+    //         if(j == -1)
+    //         {
+    //             //should not occur something has crashed
+    //             //TODO:
+    //                 //add a error log...
+    //         }
+    //         //its definitly the below line, what is this even
             
-            ((divGroupGpu*)retrieveName(layerData->divGroups, win->manager))[j].gpuBufferDataSize = newStorage[i].newGPUStorageSize;
+    //         ((divGroupGpu*)retrieveName(layerData->divGroups, win->manager))[j].gpuBufferDataSize = newStorage[i].newGPUStorageSize;
 
-        }
-    }
+    //     }
+    // }
 
     glXMakeCurrent(win->dis, None, NULL);
     return 0;
@@ -187,40 +218,36 @@ uint32_t preRender(swcWin* win)
 /**
  * @brief Use to update the render buffer after any div changes their graphics state
  * 
- * @param win 
- * @param programName Used with Layer to identify which DivGroup this belongs too 
- * @param layer ^
- * @param gpuOffset The Offset into the Gpu buffer
- * @param dataSize The byte size of data being inserted
- * @param cpuSideBufferObjectData Direct Pointer to Offset data in the cpu buffer, so if only inserting byte 340-500 of the buffer, offset the pointer by 340 before passing
+ * @param layer DivLayer
+ * @param div The Name of the Div
+ * @param programName divs program
+ * @param data the data that is equal in size to the divs stride size * divsvertexCount
  * @return 1 upon success | 0 Upon failure
  */
-uint32_t updateRenderBuffer(swcWin* win, uint32_t programName, uint32_t layer, uint32_t gpuOffset, uint32_t dataSize, void* cpuSideBufferObjectData)
+uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, void* data, swcWin* win)
 {
 
-    //WORK ON THIS NEXT
+    layerToDivGroups *tempLayerToProgram = (layerToDivGroups *)allocSB(sizeof(layerToDivGroups), win->manager);
+    tempLayerToProgram->layer = layer;
+    tempLayerToProgram = (layerToDivGroups *)swcRetrieveArray(win->divLayers, *tempLayerToProgram, uint32_tSorter, win->manager);
 
-    /*having difficulty deciding what we need to pass
-    *
-    * the absolute minimum is a struct like
-    * {
-    *    divGroupIdentifier => this needs to be the layer and program name/ vao name, as vao will be linked to divgroups just like programs
-    *    gpuDataLocation
-    *    dataSize
-    *    dataPointer
-    *    
-    * }
-    * 
-    */
-    //this doesnt work either... need to search buffer to find 
+    divGroupGpu *divGroup = (divGroupGpu*)allocSB(sizeof(divGroupGpu), win->manager);
+    divGroup->programName = programName;
+    int32_t index = swcContainsArray(tempLayerToProgram->divGroups, *divGroup, uint32_tSorter, win->manager);
+    if(index < 0)
+        return 0;
+    
+
     uint32_t i = 0;
     for(i; i < win->render->bufferDataChangedElementCount; i++)
     {
-        if(win->render->bufferDataChanged[i].programName == programName && win->render->bufferDataChanged[i].layer == layer)
+        if(win->render->bufferDataChanged[i].programName == divGroup->programName && win->render->bufferDataChanged[i].layer == layer)
         {
             break;
         }
     }
+
+
     
     if(i == win->render->bufferDataChangedElementCount)
     {
@@ -231,13 +258,40 @@ uint32_t updateRenderBuffer(swcWin* win, uint32_t programName, uint32_t layer, u
             return 0;
         }
     }
-    win->render->bufferDataChanged[i].programName = programName;
-    win->render->bufferDataChanged[i].layer = layer;
-    win->render->bufferDataChanged[i].gpuOffset = gpuOffset;
-    win->render->bufferDataChanged[i].dataSize = dataSize;
-    win->render->bufferDataChanged[i].cpuSideBufferObjectData = cpuSideBufferObjectData;
 
-    return 0;
+    divGroup = swcRetrieveAtArray(tempLayerToProgram->divGroups, divGroupGpu, index, win->manager);
+    
+    //below the index for the divs array within the divGroup struct is used to index the cpuSideBufferObjectData, essentially operating as a dictionary
+
+    flagged_uint32_t divFlag = {.flag = 0, .x = div};
+    index = swcContainsArray(divGroup->divs, divFlag, flagged_uint32_tSorter, win->manager);
+    if(index < 0)
+    {
+        swcNameStruct *divsArray = retrieveNameL(divGroup->divs, win->manager);
+        divFlag.flag = 1;
+        index = swcContainsArray(divGroup->divs, divFlag, flagged_uint32_tSorter, win->manager);
+        if(index < 0 )
+            return 0;
+        removeAtArray(divsArray, sizeof(flagged_uint32_t), index, win->manager);
+        addAtArray(divsArray, sizeof(flagged_uint32_t), (void *)(&divFlag), index, win->manager);
+        addAtArray(retrieveNameL(divGroup->cpuSideBufferObjectData, win->manager), divGroup->strideSize * divGroup->vertexCount, data, index, win->manager);
+    }
+    else
+    {
+
+        replaceAtArray(divGroup->cpuSideBufferObjectData, divGroup->strideSize * divGroup->vertexCount, data, index, win->manager);
+        divGroup->renderedDivsCount += 1;
+    }
+    
+    
+
+    win->render->bufferDataChanged[i].programName = divGroup->programName;
+    win->render->bufferDataChanged[i].layer = layer;
+    win->render->bufferDataChanged[i].gpuOffset = divGroup->gpuBufferDataLocation;
+    win->render->bufferDataChanged[i].dataSize = divGroup->strideSize * divGroup->renderedDivsCount * divGroup->vertexCount;
+    win->render->bufferDataChanged[i].cpuSideBufferObjectData = (void *)(retrieveArray(divGroup->cpuSideBufferObjectData, win->manager)->data);
+
+    return 1;
 }
 /**
  * @brief Initializes gpu memory to InitialGpuMem
@@ -268,19 +322,18 @@ uint32_t initGPUMemory(swcWin *win)
     return 1;
 }
 /**
- * @brief Okay so to be clear this is an alloc function, it "allocated memory in the gpu"
- * what this really means is that it checks to see if the gpu buffer has memory left, if it does
- * it sets aside memory for the program group, if it doesnt it reallocs the buffer
- * and reorders the memory within the buffer to take up as least space as possible (asssuming theres
- * empty space due to deallocated memory)
+ * @brief Allocates memory of size Count * Size in Gpu
  * 
  * @param win 
- * @param size Bytes Size To Allocate
+ * @param stride Bytes Size To Allocate
+ * @param count Amount of entries to Allocate
  * @return Memory Location or 0 if Memory Will Be Mass Reallocated at Start of Render Loop | Very Trusting Drawing System Requires Correct Calls No Checks
  */
-uint32_t gpuAlloc(swcWin *win, uint32_t size)
+uint32_t gpuAlloc(uint32_t count, uint32_t stride, swcWin *win)
 {
-    xy fake = {.x = size, .y = 0};
+    //TODO:
+        //the uuuhh the uuhh the padding because of the vaoi
+    xy fake = {.x = count * stride, .y = 0};
     int32_t index = swcContainsArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
     xy *real;
     if(index == -1)
@@ -291,54 +344,87 @@ uint32_t gpuAlloc(swcWin *win, uint32_t size)
     }
     else if (index >= 0)
     {
-        //perfect memory location found... use
+        //perfect memory location found... check for alignment
         real =  swcRetrieveAtArray(win->glBuffer.emptyMem, xy, index, win->manager);
-        fake.y = real->y;
-        swcRemoveAtArray(win->glBuffer.emptyMem, xy, index, win->manager);
-        return fake.y;
+        if(real->y % stride == 0)
+        {   
+            //perfect memory alignment too
+            fake.y = real->y;
+            swcRemoveAtArray(win->glBuffer.emptyMem, xy, index, win->manager);
+            return fake.y;
+        }
     }
     else
     {
 
         index = -index - 2;
-        uint32_t location;
-        //location not found, check index returned... because the index returned sorts on a index -1 and index
-        //loop that means that -index -2 returned should be either between that which is less than it and index -1 and that which is greater at the index
-        //position. This is two possibilities, either option 1 the index positiion contians enough space for the new allocation, or option 2 there is no index position
-        //as it reached the end of the array. For option 1 the array retrieves the pointer to that location, it than deletes that location. Than it saves the 
-        //position in memory that location describes, than it calculates the empty space remaining from that location and reinserts that into the array, than returning
-        //the saved position. For option 2 it means there is not enough space left in gpu buffer, meaning it needs to be reallocated.
-        swcNameStruct *emptyMem = retrieveNameL(win->glBuffer.emptyMem, win->manager);
-        if(((swcArray*)emptyMem->pointer)->curSize <= index)
+    }
+    uint32_t location = 0;
+    //location not found, check index returned... because the index returned sorts on a index -1 and index
+    //loop that means that -index -2 returned should be either between that which is less than it and index -1 and that which is greater at the index
+    //position. This is two possibilities, either option 1 the index positiion contians enough space for the new allocation, or option 2 there is no index position
+    //as it reached the end of the array. For option 1 the array retrieves the pointer to that location, it than deletes that location. Than it saves the 
+    //position in memory that location describes, than it calculates the empty space remaining from that location and reinserts that into the array, than returning
+    //the saved position. For option 2 it means there is not enough space left in gpu buffer, meaning it needs to be reallocated.
+
+
+    if(win->render->reallocAddedSize > 0)
+    {
+        //will be realloced into existance at start of render buffer anyway
+        return 0;
+    }
+
+    swcNameStruct *emptyMem = retrieveNameL(win->glBuffer.emptyMem, win->manager);
+    uint32_t adjust;
+    while(((swcArray*)emptyMem->pointer)->curSize <= index)
+    {
+        //check and loop untill there is no space  or the location and space allows for alignment
+        adjust = 0;
+        real = retrieveAtArray(emptyMem, sizeof(xy), index, win->manager);
+        if(real->y % stride == 0)
         {
-            //TODO: move this to the start of the render cycle, instead save the amount of new space needed in the render struct
-            //in the window, than use that data as the "size" that this operation uses, than reinsert all the memory into the datablock,
-            //preventing this operation from being called multiple times in an operation
-
-            win->render->reallocAddedSize += size;
-
-            return 0;
-
+            location = real->y;
+            break;
         }
         else
         {
-            if(win->render->reallocAddedSize > 0)
+            adjust = real->y % stride;
+            if(real->x - adjust >= fake.x)
             {
-                //will be realloced into existance at start of render buffer anyway
-                return 0;
+                location = real->y + adjust;
+                break;
             }
-            real = retrieveAtArray(emptyMem, sizeof(xy), index, win->manager);
-            location = real->y;
-
-            fake.x = real->x - size;
-            fake.y = real->y + size;
-
-            removeAtArray(emptyMem, sizeof(xy), index, win->manager);
-            swcAddArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
-
-            return location;
+            index++;
+            //not a very pretty solution...
         }
     }
+    if(location == 0)
+    {  
+        //location cannot be found, add to size
+        win->render->reallocAddedSize += count * stride;
+
+        return 0;
+    }
+    fake.x = real->x;
+    fake.y = real->y;
+    removeAtArray(emptyMem, sizeof(xy), index, win->manager);
+
+    if(adjust)
+    {
+        xy fake2 = {.x = adjust, .y = fake.y};
+        swcAddArray(win->glBuffer.emptyMem, fake2, uint64_tSorter, win->manager);
+        fake.x -= (count * stride) + adjust;
+        fake.y += (count * stride) + adjust;
+    }
+    else
+    {
+        fake.x -= (count * stride);
+        fake.y += (count * stride);
+    }
+    if(fake.x > 0)
+        swcAddArray(win->glBuffer.emptyMem, fake, uint64_tSorter, win->manager);
+
+    return location;
 
 }
 /**
@@ -349,13 +435,13 @@ uint32_t gpuAlloc(swcWin *win, uint32_t size)
  * @param newSize byte size of memory to allocate
  * @return Memory Location
  */
-uint32_t gpuRealloc(swcWin* win, divGroupGpu* divGroupGpu, uint32_t newSize)
+uint32_t gpuRealloc(divGroupGpu* divGroupGpu, uint32_t count, swcWin* win)
 {
-    gpuFree(win, divGroupGpu);
+    gpuFree(divGroupGpu, win);
 
     divGroupGpu->gpuBufferDataSize = 0;
 
-    return gpuAlloc(win, newSize);
+    return gpuAlloc(count, divGroupGpu->strideSize * divGroupGpu->vertexCount, win);
 }
 /**
  * @brief Frees memory, this does not delete current memory within the gpu, it just allocates that space to the empty space array
@@ -364,7 +450,7 @@ uint32_t gpuRealloc(swcWin* win, divGroupGpu* divGroupGpu, uint32_t newSize)
  * @param divGroupGpu As with realloc might change this to div, but probably not
  * @return Returns 1 on success, there is no way for this to fail, unless the arrray does not exist, so just returning 1
  */
-uint32_t gpuFree(swcWin* win, divGroupGpu* divGroupGpu)
+uint32_t gpuFree(divGroupGpu* divGroupGpu, swcWin* win)
 {
     //checks for empty space ahead and behind of the space we are emptying
     swcNameStruct *emptyMemL = retrieveNameL(win->glBuffer.emptyMem, win->manager);

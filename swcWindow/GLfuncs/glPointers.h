@@ -100,6 +100,7 @@ typedef struct{
     PointerVertexArrayAttribBinding sigVertexArrayAttribBinding;
     PointerVertexArrayVertexBuffer sigVertexArrayVertexBuffer;
     PointerVertexArrayAttribFormat sigVertexArrayAttribFormat;
+    PointerBindBuffer sigPatchParameteri;
     PointerProgramUniform1f sigProgramUniform1f;
     PointerProgramUniform2f sigProgramUniform2f;
     PointerProgramUniform3f sigProgramUniform3f;

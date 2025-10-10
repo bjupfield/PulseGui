@@ -530,7 +530,7 @@ int32_t containsArray(swcArrayName arrayName, uint32_t dataSize, void* data, sor
     int32_t sizeAr = (int32_t)array->curSize;
     char* arrayData = array->data;
 
-    uint32_t i = sizeAr >> 1;
+    int64_t i = sizeAr >> 1;
     uint32_t c = i != 0 ? i : 1;
     while(1)
     {
@@ -646,6 +646,36 @@ void* retrieveAtArray(swcNameStruct *nameArray, uint32_t dataSize, uint32_t inde
     char* arrayData = array->data;
     return (void*)(arrayData + index * dataSize);
  
+}
+/**
+ * @brief Replaces the data at the current index with supplied data
+ * 
+ * @param nameArray 
+ * @param dataSize 
+ * @param index 
+ * @param manager 
+ * @return 1 if Success | 0 if Failure 
+ */
+uint32_t replaceAtArray(swcArrayName nameArray, uint32_t dataSize, void* data, uint32_t index, swcMemMan* manager)
+{
+    swcArray* array = retrieveArray(nameArray, manager);
+    if(array == NULL)
+        return 0;
+    if(array->curSize < index || array->curSize == 0)
+    {
+        if(index == 0)
+        {
+            array->curSize += 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    memcpy((void*)(array->data + (index * dataSize)), data, dataSize);
+    return 1;
+    
 }
 /**
  * @brief Returns Array if it exist, else return 0
@@ -863,6 +893,7 @@ uint32_t frameChange(swcMemMan* manager)
 */
 uint32_t programNameSorter(void* left, void* right)
 {
+    //TODO: reconsider this need to actually change this...
     programNames *leftP = (programNames*)left;
     programNames *rightP = (programNames*)right;
     uint8_t i = 0;
@@ -894,5 +925,20 @@ uint32_t uint64_tSorter(void* left, void* right)
         return 0;
     if(*leftN == * rightN)
         return 1;
+    return 2;
+}
+uint32_t flagged_uint32_tSorter(void* left, void* right)
+{
+    flagged_uint32_t *leftN = (flagged_uint32_t*)left;
+    flagged_uint32_t *rightN = (flagged_uint32_t*)right;
+    if(leftN->flag < rightN->flag)
+        return 0;
+    if(leftN->flag == rightN->flag)
+    {
+        if(leftN->x < rightN->x)
+            return 0;
+        if(leftN->x == rightN->x)
+            return 1;
+    }
     return 2;
 }

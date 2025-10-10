@@ -13,6 +13,8 @@
  * @param deleteFunc
  * @param resizeFunc 
  * @param eventFunc
+ * @param size
+ * @param vertexPerDiv The amount of vertexes each div produces in for its rendering
  * @param eventTypeMask Event Mask that Assigns Divs to recieve events from window, event mask is identical to XORG Input Event Mask
  * @param excData
  * @return Returns Div Name 
@@ -21,6 +23,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent,
     uint32_t posx, uint32_t posy, uint32_t dimx, uint32_t dimy, uint32_t layer,  
     funcPointer onLoad, funcPointer drawFunc, funcPointer deleteFunc,
     resizePointer resizeFunc, handlePointer eventFunc, size_t size,
+    uint32_t vertexPerDiv, uint32_t renderType,
     uint32_t eventTypeMask, const char pathName[256], void* excData)
 {
     swcName div = allocNamed(size, win->manager);
@@ -45,7 +48,7 @@ uint32_t initDiv(swcWin* win, uint32_t parent,
     divPoint->deleteFunc = deleteFunc;
     divPoint->size = size;
     divPoint->eventMask = eventTypeMask;
-    divPoint->programName = addToProgram(div, layer, pathName, win);
+    divPoint->programName = addToProgram(DefaultInitialDivGroupCount, div, layer, vertexPerDiv, renderType, pathName, win);
     divPoint->win = win;
 
     addToEvents(div, eventTypeMask, (uintptr_t)eventFunc, win);

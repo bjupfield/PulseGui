@@ -92,7 +92,7 @@ uint64_t glInitWindowT(Display* display, uint32_t* config, swcWin* swc, uint64_t
     swc->glContext = glXCreateNewContext(display, configs[0],  GLX_RGBA_TYPE, NULL, True);
     glXMakeCurrent(display, swc->glWindow, swc->glContext);
     retrieveGLFuncs(swc);
-    glEnable(GL_SCISSOR_TEST);
+    // glEnable(GL_SCISSOR_TEST);
 
     XFree(configs);
 
@@ -187,6 +187,8 @@ uint32_t attachShader(const char* pathName, uint32_t shaderType, uint32_t progra
         return 0;
     }
 
+    win->glPointers.sigAttachShader(programName, shader);
+
     win->glPointers.sigDeleteShader(shader);
     return 1;
 }
@@ -195,7 +197,7 @@ uint32_t glGenBuffer(swcWin* win)
     uint32_t bufferName;
     glXMakeCurrent(win->dis, win->glWindow, win->glContext);
     win->glPointers.sigCreateBuffers(1, &bufferName);
-    glXMakeCurrent(win->dis, NULL, NULL);
+    glXMakeCurrent(win->dis, None, NULL);
     return bufferName;
 }
 /**
@@ -227,14 +229,20 @@ struct attributeInfo
   uint32_t size;
   GLenum type;  
 };
+/**
+ * @brief Creates a VAO and assigns attributes of it based on attribute index, which might be the best method, but hopefully it works, we will check later
+ * 
+ * @param programName 
+ * @param win 
+ * @return 1 if Success | 0 i Failure
+ */
 uint32_t createVAO(programNames* programName, swcWin *win)
 {
     glXMakeCurrent(win->dis, win->glWindow, win->glContext);
-    GL_FLOAT_VEC2
     //gen vao
-    win->glPointers.sigCreateVertexArrays(1, programName->vaoName);
+    win->glPointers.sigCreateVertexArrays(1, &(programName->vaoName));
     //retrieve attached attributes
-    win->glPointers.sigGetProgramiv(programName->programName, GL_ACTIVE_ATTRIBUTES, programName->vaoAlignment);//being a bit cheeky
+    win->glPointers.sigGetProgramiv(programName->programName, GL_ACTIVE_ATTRIBUTES, &(programName->vaoAlignment));//being a bit cheeky
     char *name = (char *)allocSB(256, win->manager);
     struct attributeInfo *info = (struct attributeInfo*)allocSB(sizeof(struct attributeInfo) * programName->vaoAlignment, win->manager); 
     uint32_t relativeOffset = 0;
@@ -302,12 +310,16 @@ uint32_t createVAO(programNames* programName, swcWin *win)
             win->glPointers.sigVertexArrayVertexBuffer(programName->programName, bindingIndex++, win->glBuffer.bufferName, info[i].length, relativeOffset);
         }
     }
-    programName->vaoAlignment = 0;//this is actually assigned upon first memory allocation of the programs type
+    programName->vaoAlignment = relativeOffset;//this is actually assigned upon first memory allocation of the programs type
 
-    glAssignUniforms();
+    glAssignUniforms();//TODO: this func
 
-    glXMakeCurrent(win->dis, NULL, NULL);
+    glXMakeCurrent(win->dis, None, NULL);
     return 1;
+}
+uint32_t glAssignUniforms()
+{
+    return 0;
 }
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
@@ -360,6 +372,7 @@ uint32_t retrieveGLFuncs(swcWin *win)
     procMacro(sigDeleteProgram, "glDeleteProgram", win->glPointers);
     procMacro(sigGetProgramiv, "glGetProgramiv", win->glPointers);
     procMacro(sigGetProgramInfoLog, "glGetProgramInfoLog", win->glPointers);
+    procMacro(sigPatchParameteri, "glPatchParameteri", win->glPointers);
 
     //vao
     procMacro(sigGetActiveAttrib, "glGetActiveAttrib", win->glPointers);

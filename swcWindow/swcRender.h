@@ -7,9 +7,9 @@
 
 uint32_t renderMain(swcWin* win);
 uint32_t preRender(swcWin* win);
-uint32_t updateRenderBuffer(swcWin* win ,uint32_t vertexBufferObjectName, uint32_t gpuBufferDataSize, uint32_t cpuBufferDataSize, uint32_t programName, uint32_t layer, void* cpuSideBufferObjectData);
+uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, void* data, swcWin* win);
 uint32_t initGPUMemory(swcWin *win);
-uint32_t gpuAlloc(swcWin *win, uint32_t size);
-uint32_t gpuRealloc(swcWin* win, divGroupGpu* divGroupGpu, uint32_t newSize);
-uint32_t gpuFree(swcWin* win, divGroupGpu* divGroupGpu);
+uint32_t gpuAlloc(uint32_t count, uint32_t stride, swcWin *win);
+uint32_t gpuRealloc(divGroupGpu* divGroupGpu, uint32_t count, swcWin* win);
+uint32_t gpuFree(divGroupGpu* divGroupGpu, swcWin *win);
 #endif

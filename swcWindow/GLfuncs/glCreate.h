@@ -24,4 +24,9 @@ uint32_t glGenBuffer(swcWin* win);
 
 uint32_t glInitBuffer(swcWin* win, uint32_t size);
 
+uint32_t glAssignUniforms();
+
+uint32_t createVAO(programNames* programName, swcWin *win);
+
+
 #endif
