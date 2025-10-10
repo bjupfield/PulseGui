@@ -38,8 +38,8 @@ PointerBindFragDataLocation sigBindFragDataLocation = NULL;
 PointerCreateVertexArrays sigCreateVertexArrays = NULL;
 PointerBindVertexArray sigBindVertexArray = NULL;
 PointerVertexAttribPointer sigVertexAttribPointer = NULL;
-PointerEnableVertexAttribArray sigEnableVertexAttribArray = NULL;
-PointerDisableVertexAttribArray sigDisableVertexAttribArray = NULL;
+// PointerEnableVertexAttribArray sigEnableVertexArrayAttrib = NULL;
+// PointerDisableVertexAttribArray sigDisableVertexArrayAttrib = NULL;
 
 //program
 PointerCreateProgram sigCreateProgram = NULL;
@@ -115,8 +115,6 @@ int retrieveFuncs(){
     procMacro(sigCreateVertexArrays, "glCreateVertexArrays");
     procMacro(sigBindVertexArray, "glBindVertexArray");
     procMacro(sigVertexAttribPointer, "glVertexAttribPointer");
-    procMacro(sigEnableVertexAttribArray, "glEnableVertexAttribArray");
-    procMacro(sigDisableVertexAttribArray, "glDisableVertexAttribArray");
 
 
     //program

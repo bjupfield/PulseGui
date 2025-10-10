@@ -69,9 +69,9 @@ uint32_t renderMain(swcWin* win)
     layerToDivGroups *divLayers = (layerToDivGroups*)layerArray->data;
     swcArray *divGroupArray;
     divGroupGpu *divGroup;
-    glViewport(0, 0, 1054, 1078);
+    // glViewport(0, 0, 1054, 1078);
 
-    glClearColor(.5, .5, .5, 1);
+    // glClearColor(.5, .5, .5, 1);
     for(int32_t i = layerArray->curSize - 1; i >= 0; i--)
     {
         divGroupArray = retrieveArray(divLayers[i].divGroups, win->manager);

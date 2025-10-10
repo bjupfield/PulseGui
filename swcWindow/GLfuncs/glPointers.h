@@ -35,8 +35,8 @@ typedef void(*PointerBindFragDataLocation)(GLuint program, GLuint color_attachme
 typedef void(*PointerCreateVertexArrays)(GLsizei count, GLuint *VAOArray);
 typedef void(*PointerBindVertexArray)(GLuint array);
 typedef void(*PointerVertexAttribPointer)(GLuint location, GLint componentSize, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
-typedef void(*PointerEnableVertexAttribArray)(GLuint location);
-typedef void(*PointerDisableVertexAttribArray)(GLuint location);
+typedef void(*PointerEnableVertexAttribArray)(GLuint vaobj, GLuint location);
+typedef void(*PointerDisableVertexAttribArray)(GLuint vaobj, GLuint location);
 
 //program
 typedef GLuint(*PointerCreateProgram)(void);
@@ -86,8 +86,8 @@ typedef struct{
     PointerCreateVertexArrays sigCreateVertexArrays;
     PointerBindVertexArray sigBindVertexArray;
     PointerVertexAttribPointer sigVertexAttribPointer;
-    PointerEnableVertexAttribArray sigEnableVertexAttribArray;
-    PointerDisableVertexAttribArray sigDisableVertexAttribArray;
+    PointerEnableVertexAttribArray sigEnableVertexArrayAttrib;
+    PointerDisableVertexAttribArray sigDisableVertexArrayAttrib;
     PointerCreateProgram sigCreateProgram;
     PointerCreateProgram sigGetError;
     PointerLinkProgram sigLinkProgram;

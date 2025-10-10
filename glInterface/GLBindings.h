@@ -50,8 +50,8 @@ extern PointerBindFragDataLocation sigBindFragDataLocation;
 typedef void(*PointerCreateVertexArrays)(GLsizei count, GLuint *VAOArray);
 typedef void(*PointerBindVertexArray)(GLuint array);
 typedef void(*PointerVertexAttribPointer)(GLuint location, GLint componentSize, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
-typedef void(*PointerEnableVertexAttribArray)(GLuint location);
-typedef void(*PointerDisableVertexAttribArray)(GLuint location);
+// typedef void(*PointerEnableVertexAttribArray)(GLuint location);
+// typedef void(*PointerDisableVertexAttribArray)(GLuint location);
 
 extern PointerCreateVertexArrays sigCreateVertexArrays;
 extern PointerBindVertexArray sigBindVertexArray;
@@ -59,8 +59,8 @@ extern PointerBindVertexArray sigBindVertexArray;
 //call createvertexarrays, bindvertexarray, and ... bindbuffer beforehand
 extern PointerVertexAttribPointer sigVertexAttribPointer;
 //both use the currently bound vertex array object
-extern PointerEnableVertexAttribArray sigEnableVertexAttribArray;
-extern PointerDisableVertexAttribArray sigDisableVertexAttribArray;
+// extern PointerEnableVertexAttribArray sigEnableVertexArrayAttrib;
+// extern PointerDisableVertexAttribArray sigDisableVertexArrayAttrib;
 
 //program
 typedef GLuint(*PointerCreateProgram)(void);

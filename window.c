@@ -40,72 +40,72 @@ int main(int argc, char **argv)
     // return 0;
 
     initWindow(defConfiguration, defMask, 0, 0, 200, 200, 0);
-    Display* display = XOpenDisplay(NULL);
+    // Display* display = XOpenDisplay(NULL);
 
-    //we will set an errorhandler down the line, but I don't really want to mess with it now
-    XSetErrorHandler(errorHandler);
+    // //we will set an errorhandler down the line, but I don't really want to mess with it now
+    // XSetErrorHandler(errorHandler);
 
-    XVisualInfo *info = NULL;
-    if(queryServer(display))
-    {
-        printf("Has X Server || Has a Config: %i\n", retrieveConfig(display, defConfiguration));
-        info = retrieveVisual(display);
-    }
-
-
-    XSetWindowAttributes wa = {
-		.override_redirect = False,
-  		//.background_pixmap = ParentRelative,
-		.event_mask = 
-            ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask|
-            EnterWindowMask|LeaveWindowMask|ExposureMask|PointerMotionMask|
-            VisibilityChangeMask|StructureNotifyMask,
-		.background_pixel = BlackPixel(display, 0),
-        .colormap = XCreateColormap(display, RootWindow(display, 0), info->visual, AllocNone),
-	};
-
-    Window w = XCreateWindow(
-        display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
-        info->depth, CopyFromParent, info->visual, 
-		CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa);
-
-    XFree(info);
-
-    initializeWindow(display, w);
-
-    XMapWindow(display, w);
-
-    XFlush(display);
-    /*
-    * not really needed as XPending(), XNextEvent, and XWindowEvent(), all flush the display
-    * buffer to the xserver,
-    * same with XSync(display, 0), which flushes both the xservers and the displays buffers
-    */
-    //sleep(6);
-
-    XEvent event;
-
-    createAttachProgram(display, attri);
-    //printf("Buffer Amount: %i\n", currenting(display));
-
-    while(plzDestroy)
-    {
-        uint32_t eventsQueued = XEventsQueued(display, QueuedAfterFlush);
-        //printf("%i\n", eventsQueued);
-
-        XNextEvent(display, &event);
-        handleEvent(&event, display, &w);
-    }
+    // XVisualInfo *info = NULL;
+    // if(queryServer(display))
+    // {
+    //     printf("Has X Server || Has a Config: %i\n", retrieveConfig(display, defConfiguration));
+    //     info = retrieveVisual(display);
+    // }
 
 
-    XDestroyWindow(display, w);
-    XFlush(display);
+    // XSetWindowAttributes wa = {
+	// 	.override_redirect = False,
+  	// 	//.background_pixmap = ParentRelative,
+	// 	.event_mask = 
+    //         ButtonPressMask|ButtonReleaseMask|KeyPressMask|KeyReleaseMask|
+    //         EnterWindowMask|LeaveWindowMask|ExposureMask|PointerMotionMask|
+    //         VisibilityChangeMask|StructureNotifyMask,
+	// 	.background_pixel = BlackPixel(display, 0),
+    //     .colormap = XCreateColormap(display, RootWindow(display, 0), info->visual, AllocNone),
+	// };
 
-    //sleep(4);
+    // Window w = XCreateWindow(
+    //     display, RootWindow(display, 0), 400, 400, 300, 300, 0, 					
+    //     info->depth, CopyFromParent, info->visual, 
+	// 	CWBackPixel|CWEventMask|CWColormap|CWOverrideRedirect, &wa);
 
-    destroyGLX(display);
+    // XFree(info);
 
-    XCloseDisplay(display);
+    // initializeWindow(display, w);
+
+    // XMapWindow(display, w);
+
+    // XFlush(display);
+    // /*
+    // * not really needed as XPending(), XNextEvent, and XWindowEvent(), all flush the display
+    // * buffer to the xserver,
+    // * same with XSync(display, 0), which flushes both the xservers and the displays buffers
+    // */
+    // //sleep(6);
+
+    // XEvent event;
+
+    // createAttachProgram(display, attri);
+    // //printf("Buffer Amount: %i\n", currenting(display));
+
+    // while(plzDestroy)
+    // {
+    //     uint32_t eventsQueued = XEventsQueued(display, QueuedAfterFlush);
+    //     //printf("%i\n", eventsQueued);
+
+    //     XNextEvent(display, &event);
+    //     handleEvent(&event, display, &w);
+    // }
+
+
+    // XDestroyWindow(display, w);
+    // XFlush(display);
+
+    // //sleep(4);
+
+    // destroyGLX(display);
+
+    // XCloseDisplay(display);
 
     return 0;
 

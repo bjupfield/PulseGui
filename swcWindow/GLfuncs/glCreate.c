@@ -192,14 +192,6 @@ uint32_t attachShader(const char* pathName, uint32_t shaderType, uint32_t progra
     win->glPointers.sigDeleteShader(shader);
     return 1;
 }
-uint32_t glGenBuffer(swcWin* win)
-{
-    uint32_t bufferName;
-    glXMakeCurrent(win->dis, win->glWindow, win->glContext);
-    win->glPointers.sigCreateBuffers(1, &bufferName);
-    glXMakeCurrent(win->dis, None, NULL);
-    return bufferName;
-}
 /**
  * @brief Creates the buffer for the window, uses size parameter for initial memory storage
  * a single buffer is used for memory
@@ -215,7 +207,7 @@ uint32_t glInitBuffer(swcWin* win, uint32_t size)
 
     win->glPointers.sigNamedBufferData(buffer, size, NULL, GL_DYNAMIC_DRAW);
 
-    if(!(win->glPointers.sigGetError()))
+    if((win->glPointers.sigGetError()))
     {
         //TODO: Log Event and put error checks elsewhere in gl code
         return 0;
@@ -253,48 +245,60 @@ uint32_t createVAO(programNames* programName, swcWin *win)
         int8_t location = win->glPointers.sigGetAttribLocation(programName->programName, name);
         if(location != -1)
         {
+            //chatgpt generated switch statement, i cannot beasked to type this all out, or write an interpreter that would do it for me
+            switch(info[i].type) {
+                case GL_FLOAT:              info[i].size *= 1 ;  info[i].type = GL_FLOAT;          break;
+                case GL_FLOAT_VEC2:         info[i].size *= 2;  info[i].type = GL_FLOAT;           break;
+                case GL_FLOAT_VEC3:         info[i].size *= 3;  info[i].type = GL_FLOAT;           break;
+                case GL_FLOAT_VEC4:         info[i].size *= 4;  info[i].type = GL_FLOAT;           break;
+                case GL_FLOAT_MAT2:         info[i].size *= 4;  info[i].type = GL_FLOAT;           break; 
+                case GL_FLOAT_MAT3:         info[i].size *= 9;  info[i].type = GL_FLOAT;           break; 
+                case GL_FLOAT_MAT4:         info[i].size *= 16; info[i].type = GL_FLOAT;           break; 
+                case GL_FLOAT_MAT2x3:       info[i].size *= 6;  info[i].type = GL_FLOAT;           break; 
+                case GL_FLOAT_MAT2x4:       info[i].size *= 8;  info[i].type = GL_FLOAT;           break; 
+                case GL_FLOAT_MAT3x2:       info[i].size *= 6;  info[i].type = GL_FLOAT;           break; 
+                case GL_FLOAT_MAT3x4:       info[i].size *= 12; info[i].type = GL_FLOAT;           break;
+                case GL_FLOAT_MAT4x2:       info[i].size *= 8;  info[i].type = GL_FLOAT;           break; 
+                case GL_FLOAT_MAT4x3:       info[i].size *= 12; info[i].type = GL_FLOAT;           break;
+                case GL_INT:                info[i].size *= 1;  info[i].type = GL_INT;             break;
+                case GL_INT_VEC2:           info[i].size *= 2;  info[i].type = GL_INT;             break;
+                case GL_INT_VEC3:           info[i].size *= 3;  info[i].type = GL_INT;             break;
+                case GL_INT_VEC4:           info[i].size *= 4;  info[i].type = GL_INT;             break;
+                case GL_UNSIGNED_INT:       info[i].size *= 1;  info[i].type = GL_UNSIGNED_INT;    break;
+                case GL_UNSIGNED_INT_VEC2:  info[i].size *= 2;  info[i].type = GL_UNSIGNED_INT;    break;
+                case GL_UNSIGNED_INT_VEC3:  info[i].size *= 3;  info[i].type = GL_UNSIGNED_INT;    break;
+                case GL_UNSIGNED_INT_VEC4:  info[i].size *= 4;  info[i].type = GL_UNSIGNED_INT;    break;
+                case GL_DOUBLE:             info[i].size *= 1;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_VEC2:        info[i].size *= 2;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_VEC3:        info[i].size *= 3;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_VEC4:        info[i].size *= 4;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT2:        info[i].size *= 4;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT3:        info[i].size *= 9;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT4:        info[i].size *= 16; info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT2x3:      info[i].size *= 6;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT2x4:      info[i].size *= 8;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT3x2:      info[i].size *= 6;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT3x4:      info[i].size *= 12; info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT4x2:      info[i].size *= 8;  info[i].type = GL_DOUBLE;          break;
+                case GL_DOUBLE_MAT4x3:      info[i].size *= 12; info[i].type = GL_DOUBLE;          break;
+            }
+
+
+
             //isn't base attribute? I think this is necessary?
             win->glPointers.sigVertexArrayAttribBinding(programName->vaoName, location, bindingIndex++);
             win->glPointers.sigVertexArrayAttribFormat(programName->vaoName, location, info[i].size, info[i].type, GL_TRUE/* I dont remember what this does */, relativeOffset);
+            win->glPointers.sigEnableVertexArrayAttrib(programName->vaoName, location);
+
             
             info[i].length = relativeOffset;
             
             //switch statement generated by chatgpt thankfully i didnt have too, as the GL_FLOAT and GL_INT_VEC4 are not aligned on what they are defined by... so i think it has to be written in this way
             switch(info[i].type) {
-                case GL_FLOAT:           relativeOffset += info[i].size * sizeof(float); break;
-                case GL_FLOAT_VEC2:      relativeOffset += info[i].size * 2 * sizeof(float); break;
-                case GL_FLOAT_VEC3:      relativeOffset += info[i].size * 3 * sizeof(float); break;
-                case GL_FLOAT_VEC4:      relativeOffset += info[i].size * 4 * sizeof(float); break;
-                case GL_FLOAT_MAT2:      relativeOffset += info[i].size * 4 * sizeof(float); break;  
-                case GL_FLOAT_MAT3:      relativeOffset += info[i].size * 9 * sizeof(float); break; 
-                case GL_FLOAT_MAT4:      relativeOffset += info[i].size * 16 * sizeof(float); break; 
-                case GL_FLOAT_MAT2x3:    relativeOffset += info[i].size * 6 * sizeof(float); break;  
-                case GL_FLOAT_MAT2x4:    relativeOffset += info[i].size * 8 * sizeof(float); break;  
-                case GL_FLOAT_MAT3x2:    relativeOffset += info[i].size * 6 * sizeof(float); break;   
-                case GL_FLOAT_MAT3x4:    relativeOffset += info[i].size * 12 * sizeof(float); break;  
-                case GL_FLOAT_MAT4x2:    relativeOffset += info[i].size * 8 * sizeof(float); break;   
-                case GL_FLOAT_MAT4x3:    relativeOffset += info[i].size * 12 * sizeof(float); break; 
-                case GL_INT:             relativeOffset += info[i].size * sizeof(int); break;
-                case GL_INT_VEC2:        relativeOffset += info[i].size * 2 * sizeof(int); break;
-                case GL_INT_VEC3:        relativeOffset += info[i].size * 3 * sizeof(int); break;
-                case GL_INT_VEC4:        relativeOffset += info[i].size * 4 * sizeof(int); break;
-                case GL_UNSIGNED_INT:    relativeOffset += info[i].size * sizeof(unsigned int); break;
-                case GL_UNSIGNED_INT_VEC2: relativeOffset += info[i].size * 2 * sizeof(unsigned int); break;
-                case GL_UNSIGNED_INT_VEC3: relativeOffset += info[i].size * 3 * sizeof(unsigned int); break;
-                case GL_UNSIGNED_INT_VEC4: relativeOffset += info[i].size * 4 * sizeof(unsigned int); break;
-                case GL_DOUBLE:          relativeOffset += info[i].size * sizeof(double); break;
-                case GL_DOUBLE_VEC2:     relativeOffset += info[i].size * 2 * sizeof(double); break;
-                case GL_DOUBLE_VEC3:     relativeOffset += info[i].size * 3 * sizeof(double); break;
-                case GL_DOUBLE_VEC4:     relativeOffset += info[i].size * 4 * sizeof(double); break;
-                case GL_DOUBLE_MAT2:     relativeOffset += info[i].size * 4 * sizeof(double); break;
-                case GL_DOUBLE_MAT3:     relativeOffset += info[i].size * 9 * sizeof(double); break;
-                case GL_DOUBLE_MAT4:     relativeOffset += info[i].size * 16 * sizeof(double); break;
-                case GL_DOUBLE_MAT2x3:   relativeOffset += info[i].size * 6 * sizeof(double); break;
-                case GL_DOUBLE_MAT2x4:   relativeOffset += info[i].size * 8 * sizeof(double); break;
-                case GL_DOUBLE_MAT3x2:   relativeOffset += info[i].size * 6 * sizeof(double); break;
-                case GL_DOUBLE_MAT3x4:   relativeOffset += info[i].size * 12 * sizeof(double); break;
-                case GL_DOUBLE_MAT4x2:   relativeOffset += info[i].size * 8 * sizeof(double); break;
-                case GL_DOUBLE_MAT4x3:   relativeOffset += info[i].size * 12 * sizeof(double); break;
+                case GL_FLOAT:           relativeOffset += info[i].size * sizeof(GLfloat); break;
+                case GL_INT:             relativeOffset += info[i].size * sizeof(GLint); break;
+                case GL_UNSIGNED_INT:    relativeOffset += info[i].size * sizeof(GLuint); break;
+                case GL_DOUBLE:          relativeOffset += info[i].size * sizeof(GLdouble); break;
             }
         }
         else
@@ -362,8 +366,8 @@ uint32_t retrieveGLFuncs(swcWin *win)
     procMacro(sigCreateVertexArrays, "glCreateVertexArrays", win->glPointers);
     procMacro(sigBindVertexArray, "glBindVertexArray", win->glPointers);
     procMacro(sigVertexAttribPointer, "glVertexAttribPointer", win->glPointers);
-    procMacro(sigEnableVertexAttribArray, "glEnableVertexAttribArray", win->glPointers);
-    procMacro(sigDisableVertexAttribArray, "glDisableVertexAttribArray", win->glPointers);
+    procMacro(sigEnableVertexArrayAttrib, "glEnableVertexArrayAttrib", win->glPointers);
+    procMacro(sigDisableVertexArrayAttrib, "glDisableVertexArrayAttrib", win->glPointers);
 
     //program
     procMacro(sigCreateProgram, "glCreateProgram", win->glPointers);

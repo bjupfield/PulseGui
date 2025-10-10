@@ -59,6 +59,10 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
     //intialize all arrayName things
     initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize, (layerCount == 0 ? DefaultLayerCount : layerCount)); 
     ((swcWin*)retrieveName(windowName, &manager))->eventGroups = initEventGroups(((swcWin*)retrieveName(windowName, &manager)), eventMask, InitialEventToHandleSize);
+    if(!initGPUMemory(((swcWin*)retrieveName(windowName, &manager))))
+    {
+        return null;
+    }
 
     preRender((swcWin*)retrieveName(windowName, &manager));
 

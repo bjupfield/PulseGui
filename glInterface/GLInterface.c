@@ -384,7 +384,7 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
 
     sigBufferData(GL_ARRAY_BUFFER, sizeof(bdata), bdata, GL_DYNAMIC_DRAW);
 
-    sigEnableVertexAttribArray(0);
+    // sigEnableVertexArrayAttrib(0);
 
     sigLinkProgram(program);
 
