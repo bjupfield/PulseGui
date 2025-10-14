@@ -113,7 +113,7 @@ int destroyGLX(Display* display);
 
 int createAttachProgram(Display* display, XWindowAttributes attributes);
 
-int adjustViewport(Display* display, int width, int height);
+// int adjustViewport(Display* display, int width, int height);
 
 XVisualInfo* retVisual(Display* display, uint32_t* config);
 

@@ -33,8 +33,8 @@ endif
 clean : 
 	$(MAKE) main
 	
-	-for file in $(files); do \
-		rm $(ie)/$$file.o; \
+	-for file in $(filesO); do \
+		rm $$file; \
 	done
 	rm $(ie)/swcDef.o
 

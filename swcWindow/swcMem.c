@@ -476,6 +476,7 @@ uint32_t removeArray(swcArrayName arrayName, uint32_t dataSize, void* data, sort
         return 0;
     }
     sizeAr--;
+    array->curSize--;
     while(i < sizeAr)
     {
         memcpy((void*)(arrayData + (i * dataSize)), (void*)(arrayData + ((i) * dataSize)), dataSize);

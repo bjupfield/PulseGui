@@ -141,7 +141,7 @@ typedef struct
 struct swcDiv;
 
 typedef uint32_t(*funcPointer)(struct swcDiv*);
-typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t x, uint32_t y);
+typedef uint32_t(*resizePointer)(struct swcDiv*, const XEvent* event);
 typedef uint32_t(*handlePointer)(uint32_t* divs, uint32_t divsSize, XEvent* event, swcMemMan* manager);
 
 typedef struct {
@@ -203,7 +203,7 @@ typedef struct {
     uint32_t renderedDivsCount;
     uint16_t renderType;// the render mode, stores everything, patches vertices is specified by being render type - GL_PATCHES, as patches is the largest type possible 
     swcArrayName cpuSideBufferObjectData;
-    swcArrayName divs;
+    swcArrayName divs;//uses flagged_uint32_t as datatype, with the flag indicating if it is rendered or not
 }divGroupGpu;
 /**
  * @brief this is the data structure that will be held within the render structure, it will be referenced by a div whenver it updates its graphics, in doing so
@@ -221,6 +221,17 @@ typedef struct
 
 }bufferDataChanged;
 
+
+/**
+ * @brief Just to use as an easy structure
+ * 
+ */
+typedef struct xy
+{
+    uint32_t x;
+    uint32_t y;
+}xy;
+
 /**
  * @brief 
  * Struct used for organizational purposes within the window struct, basically it will contain all the references that are needed for rendering
@@ -228,9 +239,12 @@ typedef struct
  */
 struct render
 {
+    uint16_t remapping;//boolean value to say if the window is being remapped during this frame or not
+    
     uint32_t bufferDataChangedSize;
     uint32_t bufferDataChangedElementCount;
     uint32_t reallocAddedSize;
+    unsigned long remappingId;
     bufferDataChanged* bufferDataChanged;//pointer to SB datablock where buffer names that were updated are stored, renewed every frame
 };
 /**
@@ -280,6 +294,7 @@ typedef struct {
     *  the voas will use the old structure for the buffers and just hold the voas current gpu memory storage inside it as well as the other memory
     *  than to reorganize the memory structure we will just use this stuff to create a new memory buffer with very simple <3
     */
+    xy widthHeightViewport;
     struct render *render;
     /*
     * Div Layers are used for rendering purposes, they control the z layer for div
@@ -342,15 +357,5 @@ typedef struct swcDiv{
     */
 }swcDiv;
 
-
-/**
- * @brief Just to use as an easy structure
- * 
- */
-typedef struct xy
-{
-    uint32_t x;
-    uint32_t y;
-}xy;
 
 #endif

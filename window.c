@@ -152,7 +152,7 @@ int notifyChangeHandle(XConfigureEvent event, Window* window, Display* display)
 
     //after some deliberation, I think we should use event.width, it looks like other windows use this, instead of querying for the attributes
 
-    adjustViewport(display, event.width, event.height);
+    // adjustViewport(display, event.width, event.height);
 
     return 0;
 }

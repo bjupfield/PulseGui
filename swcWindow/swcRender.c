@@ -64,37 +64,46 @@ uint32_t renderMain(swcWin* win)
             win->render->bufferDataChanged[i].dataSize, win->render->bufferDataChanged[i].cpuSideBufferObjectData);
         }
     }
+    
+    
     //render
-    swcArray *layerArray = retrieveArray(win->divLayers, win->manager);
-    layerToDivGroups *divLayers = (layerToDivGroups*)layerArray->data;
-    swcArray *divGroupArray;
-    divGroupGpu *divGroup;
-    // glViewport(0, 0, 1054, 1078);
 
-    // glClearColor(.5, .5, .5, 1);
-    for(int32_t i = layerArray->curSize - 1; i >= 0; i--)
-    {
-        divGroupArray = retrieveArray(divLayers[i].divGroups, win->manager);
-        divGroup = (divGroupGpu*)divGroupArray->data;
-        for(uint32_t j = 0; j < divGroupArray->curSize; j++)
+    // if(!win->render->remapping)
+    // {
+        swcArray *layerArray = retrieveArray(win->divLayers, win->manager);
+        layerToDivGroups *divLayers = (layerToDivGroups*)layerArray->data;
+        swcArray *divGroupArray;
+        divGroupGpu *divGroup;
+        // glViewport(0, 0, 1054, 1078);
+
+        // glClearColor(.5, .5, .5, 1);
+        for(int32_t i = layerArray->curSize - 1; i >= 0; i--)
         {
-            win->glPointers.sigBindVertexArray(divGroup[j].vaoName);
-            win->glPointers.sigUseProgram(divGroup[j].programName);
-            if(divGroup[j].renderType > GL_TRIANGLE_STRIP_ADJACENCY)
+            divGroupArray = retrieveArray(divLayers[i].divGroups, win->manager);
+            divGroup = (divGroupGpu*)divGroupArray->data;
+            for(uint32_t j = 0; j < divGroupArray->curSize; j++)
             {
-                win->glPointers.sigPatchParameteri(GL_PATCH_VERTICES, divGroup[j].renderType - GL_TRIANGLE_STRIP_ADJACENCY);
-                glDrawArrays(GL_PATCHES, divGroup[j].gpuBufferDataLocation / divGroup[j].strideSize, divGroup[j].renderedDivsCount * divGroup[j].vertexCount);
+                win->glPointers.sigBindVertexArray(divGroup[j].vaoName);
+                win->glPointers.sigUseProgram(divGroup[j].programName);
+                if(divGroup[j].renderType > GL_TRIANGLE_STRIP_ADJACENCY)
+                {
+                    win->glPointers.sigPatchParameteri(GL_PATCH_VERTICES, divGroup[j].renderType - GL_TRIANGLE_STRIP_ADJACENCY);
+                    glDrawArrays(GL_PATCHES, divGroup[j].gpuBufferDataLocation / divGroup[j].strideSize, divGroup[j].renderedDivsCount * divGroup[j].vertexCount);
+                }
+                else{
+                    glDrawArrays(divGroup[j].renderType, divGroup[j].gpuBufferDataLocation / divGroup[j].strideSize, divGroup[j].renderedDivsCount * divGroup[j].vertexCount);
+                }
+                //TODO: rid the world of this func, and use a glpointer
+                
             }
-            else{
-                glDrawArrays(divGroup[j].renderType, divGroup[j].gpuBufferDataLocation / divGroup[j].strideSize, divGroup[j].renderedDivsCount * divGroup[j].vertexCount);
-            }
-            //TODO: rid the world of this func, and use a glpointer
-            
         }
-    }
 
-    glXSwapBuffers(win->dis, win->glWindow);
-
+        glXSwapBuffers(win->dis, win->glWindow);
+    // }
+    // else
+    // {
+        
+    // }
 
 
 
@@ -193,13 +202,23 @@ uint32_t renderMain(swcWin* win)
  * @return Returns 1 upon Success | 0 on Fail 
  */
 uint32_t preRender(swcWin* win)
-{   win->render = (struct render*)allocSB(sizeof(struct render), win->manager);
+{   
+    uint32_t hold = 0;
+    unsigned long remappingId = 0;
+    if(win->render != NULL)
+    {
+        hold = win->render->remapping;
+        remappingId = win->render->remappingId;
+    }
+    win->render = (struct render*)allocSB(sizeof(struct render), win->manager);
     if(win->render == NULL)
     {
         return 0;
     }
     win->render->bufferDataChangedElementCount = 0;
     win->render->reallocAddedSize = 0;
+    win->render->remapping = hold;
+    win->render->remappingId = remappingId;
     
     swcArray *programArray = (swcArray*)retrieveArray(win->glProgramNames, win->manager);//grab the current program count
     swcArray *layerArray = (swcArray*)retrieveArray(win->divLayers, win->manager);//grab the layer count
@@ -221,12 +240,12 @@ uint32_t preRender(swcWin* win)
  * @param layer DivLayer
  * @param div The Name of the Div
  * @param programName divs program
- * @param data the data that is equal in size to the divs stride size * divsvertexCount
- * @return 1 upon success | 0 Upon failure
+ * @return Returns Pointer to Data to be Changed, ONLY RETURNS POINTER DOES NOT INSERT DATA | Returns Null pointer if failed
  */
-uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, void* data, swcWin* win)
+void *updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, swcWin* win)
 {
 
+    //assuming layer exist
     layerToDivGroups *tempLayerToProgram = (layerToDivGroups *)allocSB(sizeof(layerToDivGroups), win->manager);
     tempLayerToProgram->layer = layer;
     tempLayerToProgram = (layerToDivGroups *)swcRetrieveArray(win->divLayers, *tempLayerToProgram, uint32_tSorter, win->manager);
@@ -234,8 +253,8 @@ uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, v
     divGroupGpu *divGroup = (divGroupGpu*)allocSB(sizeof(divGroupGpu), win->manager);
     divGroup->programName = programName;
     int32_t index = swcContainsArray(tempLayerToProgram->divGroups, *divGroup, uint32_tSorter, win->manager);
-    if(index < 0)
-        return 0;
+    if(index < 0)//div group not found, shouldnt happen
+        return NULL;
     
 
     uint32_t i = 0;
@@ -255,7 +274,7 @@ uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, v
         if(i + 1 > win->render->bufferDataChangedSize)
         {
             //TODO: add more space
-            return 0;
+            return NULL;
         }
     }
 
@@ -263,7 +282,9 @@ uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, v
     
     //below the index for the divs array within the divGroup struct is used to index the cpuSideBufferObjectData, essentially operating as a dictionary
 
+    void * pointer;
     flagged_uint32_t divFlag = {.flag = 0, .x = div};
+    
     index = swcContainsArray(divGroup->divs, divFlag, flagged_uint32_tSorter, win->manager);
     if(index < 0)
     {
@@ -271,15 +292,17 @@ uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, v
         divFlag.flag = 1;
         index = swcContainsArray(divGroup->divs, divFlag, flagged_uint32_tSorter, win->manager);
         if(index < 0 )
-            return 0;
+            return NULL;
         removeAtArray(divsArray, sizeof(flagged_uint32_t), index, win->manager);
         addAtArray(divsArray, sizeof(flagged_uint32_t), (void *)(&divFlag), index, win->manager);
-        addAtArray(retrieveNameL(divGroup->cpuSideBufferObjectData, win->manager), divGroup->strideSize * divGroup->vertexCount, data, index, win->manager);
+        pointer = addAtArray(retrieveNameL(divGroup->cpuSideBufferObjectData, win->manager), divGroup->strideSize * divGroup->vertexCount, divsArray->pointer, index, win->manager);//fake data, copies the start of the array to be overriden later, as long as array is larger than 0 it should work
     }
     else
     {
 
-        replaceAtArray(divGroup->cpuSideBufferObjectData, divGroup->strideSize * divGroup->vertexCount, data, index, win->manager);
+        pointer = (retrieveName(divGroup->cpuSideBufferObjectData, win->manager));
+        ((swcArray*)pointer)->curSize++;
+        pointer = ((swcArray*)pointer)->data;
         divGroup->renderedDivsCount += 1;
     }
     
@@ -291,7 +314,7 @@ uint32_t updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, v
     win->render->bufferDataChanged[i].dataSize = divGroup->strideSize * divGroup->renderedDivsCount * divGroup->vertexCount;
     win->render->bufferDataChanged[i].cpuSideBufferObjectData = (void *)(retrieveArray(divGroup->cpuSideBufferObjectData, win->manager)->data);
 
-    return 1;
+    return pointer;
 }
 /**
  * @brief Initializes gpu memory to InitialGpuMem
@@ -359,7 +382,7 @@ uint32_t gpuAlloc(uint32_t count, uint32_t stride, swcWin *win)
 
         index = -index - 2;
     }
-    uint32_t location = 0;
+    int64_t location = -1;
     //location not found, check index returned... because the index returned sorts on a index -1 and index
     //loop that means that -index -2 returned should be either between that which is less than it and index -1 and that which is greater at the index
     //position. This is two possibilities, either option 1 the index positiion contians enough space for the new allocation, or option 2 there is no index position
@@ -376,7 +399,7 @@ uint32_t gpuAlloc(uint32_t count, uint32_t stride, swcWin *win)
 
     swcNameStruct *emptyMem = retrieveNameL(win->glBuffer.emptyMem, win->manager);
     uint32_t adjust;
-    while(((swcArray*)emptyMem->pointer)->curSize <= index)
+    while(((swcArray*)emptyMem->pointer)->curSize >= index)
     {
         //check and loop untill there is no space  or the location and space allows for alignment
         adjust = 0;
@@ -398,7 +421,7 @@ uint32_t gpuAlloc(uint32_t count, uint32_t stride, swcWin *win)
             //not a very pretty solution...
         }
     }
-    if(location == 0)
+    if(location == -1)
     {  
         //location cannot be found, add to size
         win->render->reallocAddedSize += count * stride;

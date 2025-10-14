@@ -325,6 +325,21 @@ uint32_t glAssignUniforms()
 {
     return 0;
 }
+/**
+ * @brief Assigns the viewport to size x,y
+ * 
+ * @param x 
+ * @param y 
+ * @param win 
+ * @return 1 if Success | 0 if Failure
+ */
+uint32_t adjustViewport(uint32_t x, uint32_t y, swcWin *win)
+{
+    glXMakeCurrent(win->dis, win->glWindow, win->glContext);
+    glViewport(0, 0, x, y);
+    glXMakeCurrent(win->dis, None, NULL);
+    return 1;
+}
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
 //this is the first time I've actually used a macro

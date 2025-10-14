@@ -26,5 +26,6 @@ uint32_t glAssignUniforms();
 
 uint32_t createVAO(programNames* programName, swcWin *win);
 
+uint32_t adjustViewport(uint32_t x, uint32_t y, swcWin *win);
 
 #endif

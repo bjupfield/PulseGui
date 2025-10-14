@@ -1,10 +1,12 @@
 #include "swcWindow.h"
 
+
 uint32_t eventHandler(swcWin* win);
 uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
 uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t initialLayerCount);
 
+struct timespec *fake;
 
 /**
  * @brief Attempts to create and return window based on passed params, pass null to config for default config and mask
@@ -21,6 +23,8 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 {
 //TODO:
     //MAKE NO RETURN
+
+    fake = malloc(sizeof(typeof(fake)));
 
     swcWin null = {};
     Display* display = XOpenDisplay(NULL);
@@ -391,6 +395,53 @@ uint32_t removeFromProgram(swcName divName, uint32_t programName, uint32_t layer
 }
 
 /**
+ * @brief occurs when window is resized... or other reasons i guess
+ * 
+ * @return 1 if Success | 0 if Failure
+ */
+uint32_t remapWindow(swcWin *win, const XEvent* event)
+{
+    struct timespec *temp = allocSB(sizeof(typeof(fake)), win->manager);
+    temp->tv_nsec = fake->tv_nsec;
+    temp->tv_sec = fake->tv_sec;
+    timespec_get(fake, TIME_UTC);
+    if(win->widthHeightViewport.x == ((XConfigureEvent *)event)->width && win->widthHeightViewport.y == ((XConfigureEvent *)event)->height)
+        return 1;
+    win->render->remapping = 1;
+    win->widthHeightViewport.x = ((XConfigureEvent *)event)->width;
+    win->widthHeightViewport.y = ((XConfigureEvent *)event)->height;
+    win->render->remappingId = ((XConfigureEvent *)event)->serial;
+
+    printf("%i, %i ||| Serail: %lu ||| TimeDif Nano: %li Sec: %li \n", win->widthHeightViewport.x, win->widthHeightViewport.y, ((XConfigureEvent *)event)->serial, (fake->tv_nsec > temp->tv_nsec ? fake->tv_nsec : 1000000000l + fake->tv_nsec) - temp->tv_nsec, fake->tv_sec - temp->tv_sec);
+
+    if(event->type == ConfigureNotify)
+    {
+        //resize window
+        adjustViewport(((XConfigureEvent *)event)->width, ((XConfigureEvent *)event)->height, win);
+    }
+
+    //TODO: seems slow and bad... maybe create new structure to refer to for divs and events... but this is essentially that, but we load the div before the func, which I cannot imagine a func that doesn't want that to happen...
+    swcArray *divLayers = retrieveArray(win->divLayers, win->manager);
+    for(uint32_t i = 0; i < divLayers->curSize; i++)
+    {
+        swcArray *divGroups = retrieveArray(((layerToDivGroups *)(divLayers->data))[i].divGroups, win->manager);
+        divGroupGpu *divGroup = (divGroupGpu *)divGroups->data;
+        for(uint32_t j = 0; j < divGroups->curSize; j++)
+        {
+            swcArray *divs = retrieveArray(divGroup[j].divs, win->manager);
+            flagged_uint32_t *divName = (flagged_uint32_t *)divs->data;
+            for(uint32_t k = 0; k < divs->curSize; k++)
+            {
+                swcDiv *div = retrieveName(divName[k].x, win->manager);
+                div->resizeFunc(div, event);
+            }
+        }
+    }
+
+    return 1;
+}
+
+/**
  * @brief at end because of nested function
  * 
  * @param win 
@@ -410,6 +461,7 @@ uint32_t handleEvents(swcWin* win)
         evntGroup* eventGroups = (evntGroup*)retrieveName(win->eventGroups, win->manager);
         uint8_t groupCount = eventGroups->eventGroupCount;
 
+
         //TODO:
             //The Way Events are handled is psychotic, think of changing, but its rather specific code, and its done well, just like a madman though
         void pass_event(uint32_t target) { 
@@ -422,7 +474,7 @@ uint32_t handleEvents(swcWin* win)
                     for(c = 0; c < funcs->curSize; c++)
                     {
                         swcArray *names = retrieveArray(funcs2[c].divsName, win->manager);
-                        swcName* divNames = allocSB(names->curSize, win->manager);
+                        swcName* divNames = allocSB(names->curSize * sizeof(swcName*), win->manager);
                         memcpy(divNames, names->data, names->curSize * sizeof(uint32_t));
                         funcs2[c].func(divNames, names->curSize, &event, win->manager); 
                     }
@@ -493,7 +545,7 @@ uint32_t handleEvents(swcWin* win)
             case ReparentNotify:
             //intended no break
             case UnmapNotify:
-                pass_event(StructureNotifyMask|SubstructureNotifyMask);
+                remapWindow(win, &event);
                 break;
             case CirculateRequest:
             //intended no break

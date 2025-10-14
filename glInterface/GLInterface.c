@@ -409,26 +409,26 @@ int createAttachProgram(Display* display, XWindowAttributes attributes)
 // 248, 249, 346
 // and distance, 250, 269
 // onto a subspace, 308
-int adjustViewport(Display* display, int width, int height)
-{
-    glXMakeCurrent(display, mainWindow, context);
+// int adjustViewport(Display* display, int width, int height)
+// {
+//     glXMakeCurrent(display, mainWindow, context);
 
-    glViewport(0, 0, width, height);
-    // glViewport(0, 0, 1, 1);
+//     glViewport(0, 0, width, height);
+//     // glViewport(0, 0, 1, 1);
 
 
-    //insert dynamic draw commands
+//     //insert dynamic draw commands
 
-    glClearColor(.5, .5, .5, 1);
+//     glClearColor(.5, .5, .5, 1);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+//     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glXSwapBuffers(display, mainWindow);
+//     glXSwapBuffers(display, mainWindow);
 
-    glXMakeCurrent(display, None, NULL);
+//     glXMakeCurrent(display, None, NULL);
 
-    return 1;
-}
+//     return 1;
+// }
 
 
 int shaderCreatorAssignerDestroyer(const char* file, int type)

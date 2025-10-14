@@ -22,8 +22,9 @@ uint32_t bOnLoad(swcDiv* div)
     
     */
 
+    gpuAlloc(36, 12, div->win);//this doesnt actually do it...
 
-    testDataStructure *test = (testDataStructure *)allocSB(sizeof(testDataStructure) * 3, div->win->manager);
+    testDataStructure *test = (testDataStructure *)updateRenderBuffer(div->layer, div->name, div->programName, div->win);
     test[0].x = 0.5;
     test[0].y = 1.0;
     test[0].z = 0.0;
@@ -35,8 +36,6 @@ uint32_t bOnLoad(swcDiv* div)
     test[2].x = 1.0;
     test[2].y = 1.0;
     test[2].z = 0.0;
-
-    updateRenderBuffer(div->layer, div->name, div->programName, (void*)test, div->win);
 
     //must contian the divs layer, otherwise previous code has failed
     // layerToDivGroups temp = {.layer = div->layer};
@@ -97,9 +96,9 @@ uint32_t bDrawFunc(swcDiv* div)
 }
 funcPointer baseDraw = bDrawFunc;
 
-uint32_t bResizeFunc(swcDiv* div, uint32_t x, uint32_t y)
+uint32_t bResizeFunc(swcDiv* div, const XEvent* event)
 {
-    printf("%i, %i\n", x, y);
+    
     return 0;
 }
 resizePointer baseResize = bResizeFunc;
