@@ -42,7 +42,7 @@ uint32_t renderMain(swcWin* win)
                 divGroups = retrieveArray(((layerToDivGroups*)(divLayers->data))[i].divGroups, win->manager);
                 for(uint32_t j = 0; j < divGroups->curSize; j++)
                 {
-                    if(((divGroupGpu*)divGroups->data)[j].gpuBufferDataSize != 0)
+                    if(((divGroupGpu*)divGroups->data)[j].gpuBufferDataSize != 0)//TODO: NEXT
                     {
                         ((divGroupGpu*)divGroups->data)[j].gpuBufferDataLocation = real->y;//continuely pushing the first empty memory space outward
                         real->x = real->x - ((divGroupGpu*)divGroups->data)[j].gpuBufferDataSize;
@@ -204,11 +204,9 @@ uint32_t renderMain(swcWin* win)
 uint32_t preRender(swcWin* win)
 {   
     uint32_t hold = 0;
-    unsigned long remappingId = 0;
     if(win->render != NULL)
     {
         hold = win->render->remapping;
-        remappingId = win->render->remappingId;
     }
     win->render = (struct render*)allocSB(sizeof(struct render), win->manager);
     if(win->render == NULL)
@@ -218,7 +216,6 @@ uint32_t preRender(swcWin* win)
     win->render->bufferDataChangedElementCount = 0;
     win->render->reallocAddedSize = 0;
     win->render->remapping = hold;
-    win->render->remappingId = remappingId;
     
     swcArray *programArray = (swcArray*)retrieveArray(win->glProgramNames, win->manager);//grab the current program count
     swcArray *layerArray = (swcArray*)retrieveArray(win->divLayers, win->manager);//grab the layer count
@@ -279,19 +276,21 @@ void *updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, swcW
     }
 
     divGroup = swcRetrieveAtArray(tempLayerToProgram->divGroups, divGroupGpu, index, win->manager);
+
+    divGroup->renderType;///////////////////////////////////////////////////////////////////////({({({({})})})})
     
     //below the index for the divs array within the divGroup struct is used to index the cpuSideBufferObjectData, essentially operating as a dictionary
 
     void * pointer;
     flagged_uint32_t divFlag = {.flag = 0, .x = div};
-    
+    swcNameStruct *divsArray = NULL;
     index = swcContainsArray(divGroup->divs, divFlag, flagged_uint32_tSorter, win->manager);
     if(index < 0)
     {
-        swcNameStruct *divsArray = retrieveNameL(divGroup->divs, win->manager);
+        divsArray = retrieveNameL(divGroup->divs, win->manager);
         divFlag.flag = 1;
         index = swcContainsArray(divGroup->divs, divFlag, flagged_uint32_tSorter, win->manager);
-        if(index < 0 )
+        if(index < 0 )//this means the div has not been properly insantiated or the wrong layer and program have been passed to this func
             return NULL;
         removeAtArray(divsArray, sizeof(flagged_uint32_t), index, win->manager);
         addAtArray(divsArray, sizeof(flagged_uint32_t), (void *)(&divFlag), index, win->manager);
@@ -305,13 +304,23 @@ void *updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, swcW
         pointer = ((swcArray*)pointer)->data;
         divGroup->renderedDivsCount += 1;
     }
-    
-    
+
+    win->render->bufferDataChanged[i].dataSize = divGroup->strideSize * divGroup->renderedDivsCount * divGroup->vertexCount;
+    if(divGroup->gpuBufferDataSize < win->render->bufferDataChanged[i].dataSize)
+    {
+        if(divsArray == NULL)
+            divsArray = retrieveNameL(divGroup->divs, win->manager);
+
+        divGroup->gpuBufferDataSize = ((swcArray*)(divsArray->pointer))->curSize * divGroup->vertexCount;
+        if(divGroup->gpuBufferDataSize == 0)
+            gpuAlloc(divGroup->gpuBufferDataSize, divGroup->strideSize, win);
+        else
+            gpuRealloc(divGroup, ((swcArray*)(divsArray->pointer))->curSize, win);
+    }
 
     win->render->bufferDataChanged[i].programName = divGroup->programName;
     win->render->bufferDataChanged[i].layer = layer;
     win->render->bufferDataChanged[i].gpuOffset = divGroup->gpuBufferDataLocation;
-    win->render->bufferDataChanged[i].dataSize = divGroup->strideSize * divGroup->renderedDivsCount * divGroup->vertexCount;
     win->render->bufferDataChanged[i].cpuSideBufferObjectData = (void *)(retrieveArray(divGroup->cpuSideBufferObjectData, win->manager)->data);
 
     return pointer;

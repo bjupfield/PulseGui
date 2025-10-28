@@ -141,7 +141,7 @@ typedef struct
 struct swcDiv;
 
 typedef uint32_t(*funcPointer)(struct swcDiv*);
-typedef uint32_t(*resizePointer)(struct swcDiv*, const XEvent* event);
+typedef uint32_t(*resizePointer)(struct swcDiv*, uint32_t width, uint32_t height);
 typedef uint32_t(*handlePointer)(uint32_t* divs, uint32_t divsSize, XEvent* event, swcMemMan* manager);
 
 typedef struct {
@@ -244,7 +244,6 @@ struct render
     uint32_t bufferDataChangedSize;
     uint32_t bufferDataChangedElementCount;
     uint32_t reallocAddedSize;
-    unsigned long remappingId;
     bufferDataChanged* bufferDataChanged;//pointer to SB datablock where buffer names that were updated are stored, renewed every frame
 };
 /**

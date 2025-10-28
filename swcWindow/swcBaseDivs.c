@@ -108,6 +108,7 @@ uint32_t bEventFunc(uint32_t* divs, uint32_t divsSize, XEvent* event, swcMemMan*
     swcDiv *div = (swcDiv *)retrieveName(divs[0], manager);
     div->win->name = 0;
 
+
     return 0;
 }
 handlePointer baseEvent = bEventFunc;

@@ -6,8 +6,6 @@ uint32_t handleEvents(swcWin* win);
 uint32_t initEventGroups(swcWin* swcWin, uint32_t eventGroups, uint32_t handleToEventCount);
 uint32_t initProgramGroups(swcWin* win, uint32_t initialProgramCount, uint32_t initialLayerCount);
 
-struct timespec *fake;
-
 /**
  * @brief Attempts to create and return window based on passed params, pass null to config for default config and mask
  * 
@@ -23,8 +21,6 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 {
 //TODO:
     //MAKE NO RETURN
-
-    fake = malloc(sizeof(typeof(fake)));
 
     swcWin null = {};
     Display* display = XOpenDisplay(NULL);
@@ -72,7 +68,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     //fake div creation
     char exampleVertPath[256] = "GlShaders/exampleVert.vert\0";
-    swcName divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, 1, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), 3, GL_TRIANGLES, ButtonPressMask, exampleVertPath, NULL);
+    swcName divName = initDiv(((swcWin*)retrieveName(windowName, &manager)), 0, 24, 0, 0, 0, 1, baseLoad, baseDraw, baseDeleteFunc, baseResize, baseEvent, sizeof(swcDiv), 3, GL_TRIANGLES, ButtonPressMask /*| EnterWindowMask*/, exampleVertPath, NULL);
 
     //mapping window and pushing to xorg... I think?
     XMapWindow(((swcWin*)retrieveName(windowName, &manager))->dis, ((swcWin*)retrieveName(windowName, &manager))->mainWin);
@@ -401,39 +397,40 @@ uint32_t removeFromProgram(swcName divName, uint32_t programName, uint32_t layer
  */
 uint32_t remapWindow(swcWin *win, const XEvent* event)
 {
-    struct timespec *temp = allocSB(sizeof(typeof(fake)), win->manager);
-    temp->tv_nsec = fake->tv_nsec;
-    temp->tv_sec = fake->tv_sec;
-    timespec_get(fake, TIME_UTC);
-    if(win->widthHeightViewport.x == ((XConfigureEvent *)event)->width && win->widthHeightViewport.y == ((XConfigureEvent *)event)->height)
-        return 1;
-    win->render->remapping = 1;
-    win->widthHeightViewport.x = ((XConfigureEvent *)event)->width;
-    win->widthHeightViewport.y = ((XConfigureEvent *)event)->height;
-    win->render->remappingId = ((XConfigureEvent *)event)->serial;
-
-    printf("%i, %i ||| Serail: %lu ||| TimeDif Nano: %li Sec: %li \n", win->widthHeightViewport.x, win->widthHeightViewport.y, ((XConfigureEvent *)event)->serial, (fake->tv_nsec > temp->tv_nsec ? fake->tv_nsec : 1000000000l + fake->tv_nsec) - temp->tv_nsec, fake->tv_sec - temp->tv_sec);
 
     if(event->type == ConfigureNotify)
     {
-        //resize window
-        adjustViewport(((XConfigureEvent *)event)->width, ((XConfigureEvent *)event)->height, win);
+        if(win->widthHeightViewport.x == ((XConfigureEvent *)event)->width && win->widthHeightViewport.y == ((XConfigureEvent *)event)->height)
+            return 1;
+        win->render->remapping = 1;
+        win->widthHeightViewport.x = ((XConfigureEvent *)event)->width;
+        win->widthHeightViewport.y = ((XConfigureEvent *)event)->height;
     }
 
-    //TODO: seems slow and bad... maybe create new structure to refer to for divs and events... but this is essentially that, but we load the div before the func, which I cannot imagine a func that doesn't want that to happen...
-    swcArray *divLayers = retrieveArray(win->divLayers, win->manager);
-    for(uint32_t i = 0; i < divLayers->curSize; i++)
+    // printf("%i, %i ||| Serail: %lu ||| TimeDif Nano: %li Sec: %li \n", win->widthHeightViewport.x, win->widthHeightViewport.y, ((XConfigureEvent *)event)->serial, (fake->tv_nsec > temp->tv_nsec ? fake->tv_nsec : 1000000000l + fake->tv_nsec) - temp->tv_nsec, fake->tv_sec - temp->tv_sec);
+
+
+    if(event->type == EnterNotify && win->render->remapping)
     {
-        swcArray *divGroups = retrieveArray(((layerToDivGroups *)(divLayers->data))[i].divGroups, win->manager);
-        divGroupGpu *divGroup = (divGroupGpu *)divGroups->data;
-        for(uint32_t j = 0; j < divGroups->curSize; j++)
+        //resize window
+        adjustViewport(win->widthHeightViewport.x, win->widthHeightViewport.y, win);
+    
+
+        //TODO: seems slow and bad... maybe create new structure to refer to for divs and events... but this is essentially that, but we load the div before the func, which I cannot imagine a func that doesn't want that to happen...
+        swcArray *divLayers = retrieveArray(win->divLayers, win->manager);
+        for(uint32_t i = 0; i < divLayers->curSize; i++)
         {
-            swcArray *divs = retrieveArray(divGroup[j].divs, win->manager);
-            flagged_uint32_t *divName = (flagged_uint32_t *)divs->data;
-            for(uint32_t k = 0; k < divs->curSize; k++)
+            swcArray *divGroups = retrieveArray(((layerToDivGroups *)(divLayers->data))[i].divGroups, win->manager);
+            divGroupGpu *divGroup = (divGroupGpu *)divGroups->data;
+            for(uint32_t j = 0; j < divGroups->curSize; j++)
             {
-                swcDiv *div = retrieveName(divName[k].x, win->manager);
-                div->resizeFunc(div, event);
+                swcArray *divs = retrieveArray(divGroup[j].divs, win->manager);
+                flagged_uint32_t *divName = (flagged_uint32_t *)divs->data;
+                for(uint32_t k = 0; k < divs->curSize; k++)
+                {
+                    swcDiv *div = retrieveName(divName[k].x, win->manager);
+                    div->resizeFunc(div, win->widthHeightViewport.x, win->widthHeightViewport.y);
+                }
             }
         }
     }
@@ -499,6 +496,7 @@ uint32_t handleEvents(swcWin* win)
                 pass_event(ColormapChangeMask);
                 break;
             case EnterNotify:
+                remapWindow(win, &event);
                 pass_event(EnterWindowMask);
                 break;
             case LeaveNotify:

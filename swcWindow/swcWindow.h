@@ -5,7 +5,6 @@
 #ifndef SWCWINDOW_H
 #define SWCWINDOW_H
 
-#include "time.h"
 #include "swcDef.h"
 #include "swcMem.h"
 #include "swcBaseDivs.h"
