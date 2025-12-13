@@ -8,6 +8,7 @@
                 "/usr/include",
                 "/usr/include/GL",
                 "/usr/lib64",
+                "/usr/include/libxml2",
             ],
             "defines": [],
             "compilerPath": "/usr/lib/llvm/18/bin/clang",
