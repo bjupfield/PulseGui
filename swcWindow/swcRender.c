@@ -276,8 +276,6 @@ void *updateRenderBuffer(uint32_t layer, swcName div, uint32_t programName, swcW
     }
 
     divGroup = swcRetrieveAtArray(tempLayerToProgram->divGroups, divGroupGpu, index, win->manager);
-
-    divGroup->renderType;///////////////////////////////////////////////////////////////////////({({({({})})})})
     
     //below the index for the divs array within the divGroup struct is used to index the cpuSideBufferObjectData, essentially operating as a dictionary
 

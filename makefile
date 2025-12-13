@@ -5,7 +5,9 @@ tester = test
 testerH = $(wildcard test)
 
 #Remove x11 lib, it will not be needed, once we are done with swcWindow
-libs = -lX11 -lGL -IswcWindow -LswcWindow/bin -lSWCWindow
+#? what is the above line on about?
+libs = -lX11 -lGL -IswcWindow -LswcWindow/bin -lSWCWindow -lxml2
+
 
 main:
 ifneq ($(bin), $(binH))
@@ -13,7 +15,7 @@ ifneq ($(bin), $(binH))
 endif
 #	$(MAKE) --directory=glInterface clean
 	$(MAKE) --directory=swcWindow clean
-	gcc -o $(name) window.c $(libs)
+	gcc -o $(name) window.c $(libs) 
 
 .PHONY: run
 run :
