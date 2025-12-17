@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="schema.xsd" type="application/xml"?>
+<InstDivs>
+    <InstDiv>
+        <Name></Name>
+        <ChildData></ChildData>
+        <Children>
+            <InstDiv>
+                <Name></Name>
+                <Transform>
+                    <PosX>0</PosX>
+                    <PosY>0</PosY>
+                    <PosZ>0</PosZ>
+                    <SizeX>1</SizeX>
+                    <SizeY>1</SizeY>
+                    <SizeZ>1</SizeZ>
+                </Transform>
+                <ChildData></ChildData>
+            </InstDiv>
+        </Children>
+    </InstDiv>
+</InstDivs>

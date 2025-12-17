@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="schema.xsd" type="application/xml"?>
+<Programs>
+    <Program>
+        <Name></Name>
+        <Url></Url>
+        <VertexShader></VertexShader>
+    </Program>
+    <Program>
+        <Name></Name>
+        <Url></Url>
+        <FragmentShader></FragmentShader>
+    </Program>
+</Programs>

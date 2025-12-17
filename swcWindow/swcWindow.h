@@ -11,6 +11,7 @@
 #include "swcDiv.h"
 #include "swcRender.h"
 #include "GLfuncs/glCreate.h"
+#include "swcXmler.h"
 
 #define zLayers 10;
 

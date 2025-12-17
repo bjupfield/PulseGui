@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="schema.xsd" type="application/xml"?>
+<Divs>
+    <Div>
+        <Name></Name>
+        <Parent></Parent>
+        <Functions></Functions>
+        <Pipeline>
+            <VertexShader></VertexShader>
+            <FragmentShader></FragmentShader>
+        </Pipeline>
+        <ChildData>
+            <int16_t>2</int16_t>
+            <int16_t>2</int16_t>
+            <int16_t>2</int16_t>
+            <int8_t>2</int8_t>
+        </ChildData>
+    </Div>
+</Divs>

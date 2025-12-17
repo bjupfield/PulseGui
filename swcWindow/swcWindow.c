@@ -22,6 +22,8 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 //TODO:
     //MAKE NO RETURN
 
+    confused();
+
     swcWin null = {};
     Display* display = XOpenDisplay(NULL);
 

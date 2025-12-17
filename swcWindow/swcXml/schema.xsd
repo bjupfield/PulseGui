@@ -1,0 +1,180 @@
+<xs:schema elementFormDefault="qualified" xml:lang="EN" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0">
+
+  <!-- Definition For Program Stages / Individual Shader Stages for Document programObjects.xml -->
+  
+  <xs:complexType name="NameAssociation">
+    <xs:sequence>
+      <xs:element name="Name" minOccurs="1" maxOccurs="1" type="xs:string"></xs:element>
+      <xs:element name="Url" type="xs:string" ></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ProgramAssociation">
+    <xs:complexContent>
+      <xs:extension base="NameAssociation">
+        <xs:sequence>
+          <xs:annotation>
+            <xs:documentation>
+              Name is for reference of later documents
+              Url for this document should probably all point to one directory
+              Shader chooses the program stage this will be inserted into at the program pipeline
+            </xs:documentation>
+          </xs:annotation>
+          <xs:choice>
+            <xs:element name="TessalatorControlShader"/>
+            <xs:element name="TessalatorEvaluationShader"/>
+            <xs:element name="GeometryShader"/>
+            <xs:element name="VertexShader"/>
+            <xs:element name="FragmentShader"/>
+            <xs:element name="ComputeShader"/>
+          </xs:choice>
+        </xs:sequence>
+      </xs:extension>      
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Programs">
+    <xs:sequence>
+      <xs:element name="Program" type="ProgramAssociation" minOccurs="1" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="Programs" type="Programs"></xs:element>
+
+  <!-- Definition for Divs or Objects for Document divsOrObjects.xml -->
+  
+  <xs:complexType name="Function">
+    <xs:complexContent>
+      <xs:restriction base="NameAssociation">
+        <xs:sequence>
+          <xs:element name="Name"></xs:element>
+        </xs:sequence>
+      </xs:restriction>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Pipeline">
+    <xs:sequence>
+      <xs:element name="TessalatorControlShader" minOccurs="0" maxOccurs="1"></xs:element>
+      <xs:element name="TessalatorEvaluationShader" minOccurs="0" maxOccurs="1"></xs:element>
+      <xs:element name="GeometryShader" minOccurs="0" maxOccurs="1"></xs:element>
+      <xs:element name="VertexShader" minOccurs="1" maxOccurs="1"></xs:element>
+      <xs:element name="FragmentShader" minOccurs="1" maxOccurs="1"></xs:element>
+      <xs:element name="ComputeShader" minOccurs="0" maxOccurs="1"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="String">
+    <xs:sequence>
+      <xs:element name="Length" type="xs:unsignedInt" minOccurs="1" maxOccurs="1"></xs:element>
+      <xs:element name="String" type="xs:normalizedString" minOccurs="1" maxOccurs="1"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:annotation>
+    <xs:documentation>
+      How this works is i plan to just pass all this to the loading func and that func will have to be written to interpret the mass, dont really know how to handle arrays, it doesnt seem as if xml can handle
+      that datatype in an effecient manner, so if we are at the pont its probably reasonable to use something other than xml
+      also 
+    </xs:documentation>
+  </xs:annotation>
+  <xs:complexType name="ChildData">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="uint8_t" type="xs:unsignedByte"></xs:element>
+      <xs:element name="uint16_t" type="xs:unsignedShort"></xs:element>
+      <xs:element name="uint32_t" type="xs:unsignedInt"></xs:element>
+      <xs:element name="uint64_t" type="xs:unsignedLong"></xs:element>
+      <xs:element name="int8_t" type="xs:byte"></xs:element>
+      <xs:element name="int16_t" type="xs:short"></xs:element>
+      <xs:element name="int32_t" type="xs:int"></xs:element>
+      <xs:element name="int64_t" type="xs:long"></xs:element>
+      <xs:element name="string" type="String"></xs:element>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="Div">
+    <xs:complexContent>
+      <xs:extension base="Function">
+        <xs:sequence>
+          <xs:annotation>
+            <xs:documentation>
+              Parent refers to previously defined divs, when interpreting the xml file the parent divs 
+              Functions will fill out any unfilled by the child, but the child can overwrite the parent functions
+              Pipeline will follow same rules
+              ChildData will not, it will simply concatanate the childata of the child onto the parents
+              also the childdata can either be defined for the class or the object, with the class being
+              defined in these Div objects, while the definitions per objects would be in the spawndiv objects
+            </xs:documentation>
+          </xs:annotation>
+          <xs:element name="Parent" type="xs:normalizedString" minOccurs="0" maxOccurs="1"></xs:element>
+          <xs:element name="Functions" minOccurs="1" maxOccurs="1">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="Function" type="Function" minOccurs="0" maxOccurs="unbounded"></xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="Pipeline" type="Pipeline" minOccurs="1" maxOccurs="1"></xs:element>
+          <xs:element name="ChildData" type="ChildData" minOccurs="1" maxOccurs="1"></xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Divs">
+    <xs:sequence>
+      <xs:element name="Div" type="Div" minOccurs="1" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="Divs" type="Divs"></xs:element>
+
+
+  <!-- Definitions for Startup document startup.xml -->
+
+  <xs:annotation>
+    <xs:documentation>
+      This is pretty much the definition of what a base object would be I think its obvious that one definition for an object is ridiculous but also using xml to define objects in this way is kind of silly
+      but just convenient so im doing it for now, and its sort of fun to learn the schema and the definitions for xml anyway
+      The childdata will have to exactly equal to the layout of the div class of its type otherwise it wont be able to be loaded, also class defintions of the childdata cannot be overwritten because of this
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:complexType name="Transform">
+    <xs:sequence>
+      <xs:element name="PosX" type="xs:long"></xs:element>
+      <xs:element name="PosY" type="xs:long"></xs:element>
+      <xs:element name="PosZ" type="xs:long"></xs:element>
+      <xs:element name="SizeX" type="xs:long"></xs:element>
+      <xs:element name="SizeY" type="xs:long"></xs:element>
+      <xs:element name="SizeZ" type="xs:long"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SpawnDiv">
+    <xs:complexContent>
+      <xs:extension base="Function">
+        <xs:sequence>
+          <xs:element name="Transform" type="Transform" minOccurs="0" maxOccurs="1"></xs:element>
+          <xs:element name="ChildData" type="ChildData" minOccurs="1" maxOccurs="1"></xs:element>
+          <xs:element name="Children" minOccurs="0" maxOccurs="1">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="InstDiv" type="SpawnDiv" minOccurs="1" maxOccurs="unbounded"></xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="InstDivs">
+    <xs:sequence>
+      <xs:element name="InstDiv" type="SpawnDiv" minOccurs="1" maxOccurs="unbounded"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="InstDivs" type="InstDivs"></xs:element>
+
+</xs:schema>
