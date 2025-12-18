@@ -2,13 +2,14 @@
 <?xml-model href="schema.xsd" type="application/xml"?>
 <Programs>
     <Program>
-        <Name></Name>
-        <Url></Url>
+        <Name>George</Name>
+        <Url>myfake.url</Url>
+        <Url>myfake2.url</Url>
         <VertexShader></VertexShader>
     </Program>
     <Program>
-        <Name></Name>
-        <Url></Url>
+        <Name>Nagrillah</Name>
+        <Url>Eugenol</Url>
         <FragmentShader></FragmentShader>
     </Program>
 </Programs>

@@ -2,10 +2,10 @@
 
   <!-- Definition For Program Stages / Individual Shader Stages for Document programObjects.xml -->
   
-  <xs:complexType name="NameAssociation">
+  <xs:complexType name="NameAssociation">  
     <xs:sequence>
-      <xs:element name="Name" minOccurs="1" maxOccurs="1" type="xs:string"></xs:element>
-      <xs:element name="Url" type="xs:string" ></xs:element>
+      <xs:element name="Name" minOccurs="1" maxOccurs="1" type="xs:normalizedString"></xs:element>
+      <xs:element name="Url" type="xs:normalizedString" minOccurs="1" maxOccurs="unbounded"></xs:element>
     </xs:sequence>
   </xs:complexType>
 
@@ -22,7 +22,7 @@
           </xs:annotation>
           <xs:choice>
             <xs:element name="TessalatorControlShader"/>
-            <xs:element name="TessalatorEvaluationShader"/>
+            <xs:element name="EvaluationTeassalatorShader"/>
             <xs:element name="GeometryShader"/>
             <xs:element name="VertexShader"/>
             <xs:element name="FragmentShader"/>
@@ -56,18 +56,11 @@
   <xs:complexType name="Pipeline">
     <xs:sequence>
       <xs:element name="TessalatorControlShader" minOccurs="0" maxOccurs="1"></xs:element>
-      <xs:element name="TessalatorEvaluationShader" minOccurs="0" maxOccurs="1"></xs:element>
+      <xs:element name="EvaluationTessalatorShader" minOccurs="0" maxOccurs="1"></xs:element>
       <xs:element name="GeometryShader" minOccurs="0" maxOccurs="1"></xs:element>
       <xs:element name="VertexShader" minOccurs="1" maxOccurs="1"></xs:element>
       <xs:element name="FragmentShader" minOccurs="1" maxOccurs="1"></xs:element>
       <xs:element name="ComputeShader" minOccurs="0" maxOccurs="1"></xs:element>
-    </xs:sequence>
-  </xs:complexType>
-
-  <xs:complexType name="String">
-    <xs:sequence>
-      <xs:element name="Length" type="xs:unsignedInt" minOccurs="1" maxOccurs="1"></xs:element>
-      <xs:element name="String" type="xs:normalizedString" minOccurs="1" maxOccurs="1"></xs:element>
     </xs:sequence>
   </xs:complexType>
 
@@ -88,7 +81,7 @@
       <xs:element name="int16_t" type="xs:short"></xs:element>
       <xs:element name="int32_t" type="xs:int"></xs:element>
       <xs:element name="int64_t" type="xs:long"></xs:element>
-      <xs:element name="string" type="String"></xs:element>
+      <xs:element name="string" type="xs:normalizedString"></xs:element>
     </xs:choice>
   </xs:complexType>
 

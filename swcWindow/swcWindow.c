@@ -22,7 +22,7 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 //TODO:
     //MAKE NO RETURN
 
-    confused();
+    
 
     swcWin null = {};
     Display* display = XOpenDisplay(NULL);
@@ -48,6 +48,9 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
         //failed to initialize gl stuff
         return null;
     }
+
+
+    programObjectsXML((swcWin*)retrieveName(windowName, &manager));
 
     //add the managers pointer to thte window struct
     ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;

@@ -15,6 +15,8 @@ filesO = $(addprefix $(ie)/, $(addsuffix .o, $(notdir $(files))))
 libs = -lX11 -lGL
 directory = -I/usr/include/libxml2
 
+CFLAGS_DEBUG = -D DEBUG
+
 
 
 main : 
@@ -24,7 +26,7 @@ endif
 	-gcc -c swcDef.h -o $(ie)/swcDef.o $(directory) $(libs)
 	-for file in $(files); do \
 		noDir="$${file##*/}"; \
-		gcc -c $$file.c -o $(ie)/$$noDir.o $(directory) $(libs); \
+		gcc -c $$file.c -o $(ie)/$$noDir.o $(directory) $(CFLAGS) $(libs); \
 	done
 	ar rc $(ie)/libSWCWindow.a $(filesO) $(ie)/swcDef.o
 
@@ -39,10 +41,10 @@ clean :
 	done
 	rm $(ie)/swcDef.o
 
-debug : 
+debug :
 	-gcc -g -c swcDef.h -o $(ie)/swcDef.o $(directory) $(libs)
 	-for file in $(files); do \
 		noDir="$${file##*/}"; \
-		gcc -g -c $$file.c -o $(ie)/$$noDir.o $(directory) $(libs); \
+		gcc -g -c $$file.c -o $(ie)/$$noDir.o $(directory) $(CFLAGS_DEBUG) $(libs); \
 	done
 	ar rc $(ie)/libSWCWindow.a $(filesO) $(ie)/swcDef.o
