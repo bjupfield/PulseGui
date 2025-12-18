@@ -16,4 +16,13 @@
             <int8_t>2</int8_t>
         </ChildData>
     </Div>
+    <Div>
+        <Name></Name>
+        <Functions></Functions>
+        <Pipeline>
+            <VertexShader></VertexShader>
+            <FragmentShader></FragmentShader>
+        </Pipeline>
+        <ChildData></ChildData>
+    </Div>
 </Divs>

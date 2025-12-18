@@ -130,11 +130,16 @@ typedef struct divObjectDef
         char event[nameMaxLength];
         char load[nameMaxLength];
         char resize[nameMaxLength];
-    };
+    }funcs;
     struct pipeline
     {
-        
-    };
+        char TCS[nameMaxLength];
+        char TES[nameMaxLength];
+        char GS[nameMaxLength];
+        char VS[nameMaxLength];
+        char FS[nameMaxLength];
+        char CS[nameMaxLength];
+    }pipeline;
 }divObjectDef;
 
 /**
@@ -161,16 +166,78 @@ uint32_t divObjectDefXML(swcWin* win)
     xmlNode *node = xmlDocGetRootElement(doc);
     node = xmlFirstElementChild(node);
     xmlNode *children;
-    char *name = allocSB(sizeof(char) * nameMaxLength, win->manager);
+    xmlNode *secondChild;
+    divObjectDef *tempDivObjectDef = allocSB(sizeof(divObjectDef), win->manager);
     while(node != NULL)
     {
         children = xmlFirstElementChild(node);
         if(children != NULL &&  (char)(*(children->name)) == 'N')
         {
-            if(textNodeChildCpy(name, nameMaxLength, children))
+            if(!textNodeChildCpy(tempDivObjectDef->name, nameMaxLength, children))
             {
-                children = xmlNextElementSibling(children);
-
+                //alert error at line
+                node = xmlNextElementSibling(node);
+                continue;
+            }
+        }
+        children = xmlNextElementSibling(children);
+        if(children != NULL && (char)(*(chidlren->name)) == 'P')
+        {
+            if(!textNodeChildCpy(tempDivObjectDef->parent, nameMaxLength, children))
+            {
+                node = xmlNextElementSibling(node);
+                continue;
+            }
+            children = xmlNextElementSibling(children);
+        }
+        if(children != NULL && (char)(*(children->name) == 'F'))
+        {
+            //do this means functions   
+        }
+        if(children != NULL && (char)(*(children->name)) == 'P')
+        {
+            secondChild = xmlFirstElementChild(children);
+            while(secondChild != NULL)
+            {
+                switch((char)(*(secondChild->name)))
+                {
+                    case 'T':
+                    {
+                        textNodeChildCpy(tempDivObjectDef->pipeline.TCS, nameMaxLength, secondChild)
+                        break;
+                    }
+                    case 'E':
+                    {
+                        textNodeChildCpy(tempDivObjectDef->pipeline.TES, nameMaxLength, secondChild)
+                        break;
+                    }
+                    case 'G':
+                    {
+                        textNodeChildCpy(tempDivObjectDef->pipeline.GS, nameMaxLength, secondChild)
+                        break;
+                    }
+                    case 'V':
+                    {
+                        textNodeChildCpy(tempDivObjectDef->pipeline.VS, nameMaxLength, secondChild)
+                        break;
+                    }
+                    case 'F':
+                    {
+                        textNodeChildCpy(tempDivObjectDef->pipeline.FS, nameMaxLength, secondChild)
+                        break;
+                    }
+                    case 'C':
+                    {
+                        textNodeChildCpy(tempDivObjectDef->pipeline.CS, nameMaxLength, secondChild)
+                        break;
+                    }
+                    default:
+                    {
+                        //alert error at line
+                        //secondChild->line
+                        break;
+                    }
+                }
             }
         }
     }
