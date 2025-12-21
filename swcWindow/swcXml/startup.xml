@@ -3,7 +3,6 @@
 <InstDivs>
     <InstDiv>
         <Name></Name>
-        <ChildData></ChildData>
         <Children>
             <InstDiv>
                 <Name></Name>
@@ -11,12 +10,13 @@
                     <PosX>0</PosX>
                     <PosY>0</PosY>
                     <PosZ>0</PosZ>
-                    <SizeX>1</SizeX>
-                    <SizeY>1</SizeY>
-                    <SizeZ>1</SizeZ>
+                    <ScaleX>1</ScaleX>
+                    <ScaleY>1</ScaleY>
+                    <ScaleZ>1</ScaleZ>
                 </Transform>
-                <ChildData></ChildData>
+                <Data></Data>
             </InstDiv>
         </Children>
+        <Data></Data>
     </InstDiv>
 </InstDivs>

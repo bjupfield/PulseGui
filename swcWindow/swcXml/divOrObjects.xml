@@ -2,18 +2,35 @@
 <?xml-model href="schema.xsd" type="application/xml"?>
 <Divs>
     <Div>
-        <Name></Name>
-        <Parent></Parent>
+        <Name>Normal</Name>
         <Functions></Functions>
         <Pipeline>
-            <VertexShader></VertexShader>
-            <FragmentShader></FragmentShader>
+            <VertexShader>Content</VertexShader>
+            <FragmentShader>NoContent</FragmentShader>
+        </Pipeline>
+        <ChildData></ChildData>
+    </Div>
+    <Div>
+        <Name>NormalDiv</Name>
+        <Parent>Normal</Parent>
+        <Functions>
+            <Function>
+                <Name>Contentless</Name>
+                <FuncPointer>MyPointer</FuncPointer>
+            </Function>
+        </Functions>
+        <Pipeline>
+            <GeometryShader>Real</GeometryShader>
+            <VertexShader>Fake</VertexShader>
+            <FragmentShader>InBetween</FragmentShader>
         </Pipeline>
         <ChildData>
             <int16_t>2</int16_t>
             <int16_t>2</int16_t>
             <int16_t>2</int16_t>
-            <int8_t>2</int8_t>
+            <int8_t>-2</int8_t>
+            <uint32_t>4</uint32_t>
+            <string>Hello World</string>
         </ChildData>
     </Div>
     <Div>

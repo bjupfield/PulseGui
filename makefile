@@ -10,6 +10,11 @@ libs = -lX11 -lGL -IswcWindow -LswcWindow/bin -lSWCWindow -lxml2
 directory = -I/usr/include/libxml2
 
 
+#okay something we should do in the future is consider optimizations to the code, the optimization that i was particularly
+#interested in was the option -foptimize-sibling-calls, which is under the optimization header -02, look at gnu documentations,
+#for gcc/optimize-options
+
+
 main:
 ifneq ($(bin), $(binH))
 	mkdir $(binH)

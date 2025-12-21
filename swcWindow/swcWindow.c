@@ -49,13 +49,13 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
         return null;
     }
 
-
-    programObjectsXML((swcWin*)retrieveName(windowName, &manager));
-
     //add the managers pointer to thte window struct
     ((swcWin*)retrieveName(windowName, &manager))->manager = &manager;
     //add the display to the window struct
     ((swcWin*)retrieveName(windowName, &manager))->dis = display;
+
+    programObjectsXML((swcWin*)retrieveName(windowName, &manager));
+    divObjectDefXML((swcWin*)retrieveName(windowName, &manager));
 
     //increase arena space for some reason???? like i don't know what this why is this here?
     addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);

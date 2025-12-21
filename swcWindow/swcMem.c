@@ -856,6 +856,19 @@ void* allocSB(size_t size, swcMemMan* manager)
 }
 
 /**
+ * @brief Allocates memory of size under the managers single buffer, fills memory space with 0, returns Null if no space
+ * 
+ * @param size 
+ * @param manager 
+ * @return void* 
+ */
+void* callocSB(size_t size, swcMemMan* manager)
+{
+    char *alloced = alloc(&manager->singleBuffer, size);
+    return memset(alloced, 0, size);
+}
+
+/**
  * @brief Allocates memory of size under managers double buffer, returns NULL if no space
  * 
  * @param size 

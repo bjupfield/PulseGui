@@ -57,7 +57,8 @@
         "stdexcept": "c",
         "swcdef.h": "c",
         "source_location": "c",
-        "swcrender.h": "c"
+        "swcrender.h": "c",
+        "parser.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "makefile.configureOnOpen": true

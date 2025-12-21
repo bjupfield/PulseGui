@@ -127,6 +127,7 @@ uint32_t replaceAtArray(swcArrayName nameArray, uint32_t dataSize, void* data, u
 swcArray* retrieveArray(swcArrayName name, swcMemMan* manager);
 
 void* allocSB(size_t size, swcMemMan* manager);
+void* callocSB(size_t size, swcMemMan* manager);
 void* allocDB(size_t size, swcMemMan* manager);
 void* retrieveName(uint32_t name, swcMemMan *manager);
 swcNameStruct* retrieveNameL(uint32_t name, swcMemMan* manager);

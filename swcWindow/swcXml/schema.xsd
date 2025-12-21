@@ -43,13 +43,23 @@
 
   <!-- Definition for Divs or Objects for Document divsOrObjects.xml -->
   
-  <xs:complexType name="Function">
+  <xs:complexType name="SimpleName">
     <xs:complexContent>
       <xs:restriction base="NameAssociation">
         <xs:sequence>
           <xs:element name="Name"></xs:element>
         </xs:sequence>
       </xs:restriction>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Function">
+    <xs:complexContent>
+      <xs:extension base="SimpleName">
+        <xs:sequence>
+          <xs:element name="FuncPointer"></xs:element>
+        </xs:sequence>
+      </xs:extension>
     </xs:complexContent>
   </xs:complexType>
 
@@ -87,7 +97,7 @@
 
   <xs:complexType name="Div">
     <xs:complexContent>
-      <xs:extension base="Function">
+      <xs:extension base="SimpleName">
         <xs:sequence>
           <xs:annotation>
             <xs:documentation>
@@ -100,7 +110,7 @@
             </xs:documentation>
           </xs:annotation>
           <xs:element name="Parent" type="xs:normalizedString" minOccurs="0" maxOccurs="1"></xs:element>
-          <xs:element name="Functions" minOccurs="1" maxOccurs="1">
+          <xs:element name="Functions" minOccurs="0" maxOccurs="1">
             <xs:complexType>
               <xs:sequence>
                 <xs:element name="Function" type="Function" minOccurs="0" maxOccurs="unbounded"></xs:element>
@@ -138,18 +148,17 @@
       <xs:element name="PosX" type="xs:long"></xs:element>
       <xs:element name="PosY" type="xs:long"></xs:element>
       <xs:element name="PosZ" type="xs:long"></xs:element>
-      <xs:element name="SizeX" type="xs:long"></xs:element>
-      <xs:element name="SizeY" type="xs:long"></xs:element>
-      <xs:element name="SizeZ" type="xs:long"></xs:element>
+      <xs:element name="ScaleX" type="xs:long"></xs:element>
+      <xs:element name="ScaleY" type="xs:long"></xs:element>
+      <xs:element name="ScaleZ" type="xs:long"></xs:element>
     </xs:sequence>
   </xs:complexType>
 
   <xs:complexType name="SpawnDiv">
     <xs:complexContent>
-      <xs:extension base="Function">
+      <xs:extension base="SimpleName">
         <xs:sequence>
           <xs:element name="Transform" type="Transform" minOccurs="0" maxOccurs="1"></xs:element>
-          <xs:element name="ChildData" type="ChildData" minOccurs="1" maxOccurs="1"></xs:element>
           <xs:element name="Children" minOccurs="0" maxOccurs="1">
             <xs:complexType>
               <xs:sequence>
@@ -157,6 +166,7 @@
               </xs:sequence>
             </xs:complexType>
           </xs:element>
+          <xs:element name="Data" type="ChildData" minOccurs="1" maxOccurs="1"></xs:element>
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
