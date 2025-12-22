@@ -73,12 +73,13 @@ typedef struct xmlObjectData
     char name[nameMaxLength];
     transform transform;
     char childrenAndChildData[];
-    //first 32bits are the children count, after are children names
+    //first 32bits are the children count, after are children pointers, each being 64bits
     //after are miscellaneous data, starting with mscellaneous data count
 }xmlObjectData;
 
 
 uint32_t programObjectsXML(swcWin* win);
 uint32_t divObjectDefXML(swcWin* win);
+uint32_t startupXML(swcWin *win);
 
 #endif

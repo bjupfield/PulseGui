@@ -9,7 +9,7 @@ typedef struct programObject
 
 uint32_t textNodeChildCpy(char *restrict dest, uint32_t maxLength, const xmlNode* parent);
 uint32_t schemaValidate(xmlDoc* doc);
-uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociation);
+uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociation, uint32_t pointerMathAdder);
 
 /**
  * @brief Inteprets programsObjects.xml and passes to GL(tobenamed) to save program objects to a table with
@@ -465,22 +465,24 @@ uint32_t divObjectDefXML(swcWin* win)
                 }
                 secondChild = xmlNextElementSibling(secondChild);
             }
-            
+            packedDataPos = 0;
         }
         //pass 
         //divobjectDef
         //funcs //check if funccount is 0 send null if
         //funccount
         //packeddata
-        //packeddatacount
+        //packeddatasize
         //to gl program instatiator
         node = xmlNextElementSibling(node);
     }
-    xmlFreeNode(children);
-    xmlFreeNode(secondChild);
-    xmlFreeNode(thirdChild);
+    // xmlFreeNode(thirdChild);
+    // xmlFreeNode(secondChild);
+    // if(children != NULL)
+    //     xmlFreeNode(children);//attempting to free the above crashes the program... don't know why
     xmlFreeNode(node);
     xmlFreeDoc(doc);
+    return 1;
 }
 
 /**
@@ -493,10 +495,10 @@ uint32_t divObjectDefXML(swcWin* win)
 uint32_t startupXML(swcWin *win)
 {
 
-    FILE *file = fopen("swcWindow/swcXml/divOrObjects.xml", "r");
+    FILE *file = fopen("swcWindow/swcXml/startup.xml", "r");
     fseek(file, 0, SEEK_END);
     uint32_t fileLength = ftell(file);
-    xmlDoc *doc = xmlReadFile("swcWindow/swcXml/divOrObjects.xml", "", 0);
+    xmlDoc *doc = xmlReadFile("swcWindow/swcXml/startup.xml", "", 0);
 
     #ifdef DEBUG
 
@@ -510,10 +512,9 @@ uint32_t startupXML(swcWin *win)
 
     xmlNode *node = xmlDocGetRootElement(doc);
     char* parentChildAssociation = callocSB(fileLength * sizeof(uint64_t), win->manager);
-    node = xmlFirstElementChild(node);
     if(node!= NULL)
     {
-        return startupPass(win, node, parentChildAssociation);
+        return startupPass(win, node, parentChildAssociation, 0);
     }
     return 0;
 }
@@ -526,27 +527,26 @@ uint32_t startupXML(swcWin *win)
  * @param rootNode Parent Node of Either InstDivs or Children
  * @return uint32_t 
  */
-uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociation)
+uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociation, uint32_t pointerMathAdder)
 {
     
     xmlNode *child = xmlFirstElementChild(rootNode);
     xmlNode *secondChild;
     xmlNode *thirdChild;
     uint32_t maybeThisShouldGoInItsOwnScope;
-    xmlObjectData *curXmlObjectData;
+    xmlObjectData *curXmlObjectData = (xmlObjectData *)(parentChildAssociation + pointerMathAdder);
     uint32_t childCount;
     uint64_t *data;
     uint32_t siblingNum = 0;
-    uint32_t pointerMathAdder = 0;
     while(child != NULL)
     {
-        while(((xmlObjectData *)(parentChildAssociation + pointerMathAdder))->name != 0)
-        {
-
-            maybeThisShouldGoInItsOwnScope =  (*(uint64_t *)((xmlObjectData *)(parentChildAssociation + pointerMathAdder))->childrenAndChildData) * nameMaxLength + sizeof(uint32_t);
-            pointerMathAdder += (*(uint64_t *)((xmlObjectData *)(parentChildAssociation + pointerMathAdder + maybeThisShouldGoInItsOwnScope))->childrenAndChildData + 1) * sizeof(uint64_t) + sizeof(xmlObjectData) + maybeThisShouldGoInItsOwnScope;
-            curXmlObjectData = (xmlObjectData *)(parentChildAssociation + pointerMathAdder);//should be the space assigned to the current temporary object for memory storage
-        }
+        // while(*(curXmlObjectData->name) != 0)
+        // {
+            
+        //     maybeThisShouldGoInItsOwnScope =  *((uint32_t *)(curXmlObjectData->childrenAndChildData)) * sizeof(uint64_t) + sizeof(uint32_t);
+        //     pointerMathAdder += (*(uint64_t *)(curXmlObjectData->childrenAndChildData + maybeThisShouldGoInItsOwnScope)) * sizeof(uint64_t) + sizeof(xmlObjectData) + maybeThisShouldGoInItsOwnScope;
+        //     curXmlObjectData = (xmlObjectData *)(parentChildAssociation + pointerMathAdder);//should be the space assigned to the current temporary object for memory storage
+        // }
         secondChild = xmlFirstElementChild(child);
         if(secondChild != NULL && *(secondChild->name) == 'N')
         {
@@ -563,7 +563,7 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
             }
             curXmlObjectData->transform.Pos.X =  atoi(thirdChild->children->content);
             
-            thirdChild = xmlFirstElementChild(secondChild);
+            thirdChild = xmlNextElementSibling(thirdChild);
             if(!xmlStrEqual(thirdChild->name, "PosY") && thirdChild->children != NULL)
             {
                 //alert error at line
@@ -571,6 +571,7 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
             }
             curXmlObjectData->transform.Pos.Y =  atoi(thirdChild->children->content);
 
+            thirdChild = xmlNextElementSibling(thirdChild);
             if(!xmlStrEqual(thirdChild->name, "PosZ") && thirdChild->children != NULL)
             {
                 //alert error at line
@@ -578,6 +579,7 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
             }
             curXmlObjectData->transform.Pos.Z =  atoi(thirdChild->children->content);
 
+            thirdChild = xmlNextElementSibling(thirdChild);
             if(!xmlStrEqual(thirdChild->name, "ScaleX") && thirdChild->children != NULL)
             {
                 //alert error at line
@@ -585,6 +587,7 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
             }
             curXmlObjectData->transform.Scale.X =  atoi(thirdChild->children->content);
 
+            thirdChild = xmlNextElementSibling(thirdChild);
             if(!xmlStrEqual(thirdChild->name, "ScaleY") && thirdChild->children != NULL)
             {
                 //alert error at line
@@ -592,6 +595,7 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
             }
             curXmlObjectData->transform.Scale.Y =  atoi(thirdChild->children->content);
 
+            thirdChild = xmlNextElementSibling(thirdChild);
             if(!xmlStrEqual(thirdChild->name, "ScaleZ") && thirdChild->children != NULL)
             {
                 //alert error at line
@@ -600,16 +604,23 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
             curXmlObjectData->transform.Scale.Z =  atoi(thirdChild->children->content);
             secondChild = xmlNextElementSibling(secondChild);
         }
+        pointerMathAdder += sizeof(xmlObjectData);
         if(secondChild != NULL && *(secondChild->name) == 'C')
         {
             childCount = xmlChildElementCount(secondChild);
-            *((uint32_t *)(curXmlObjectData->childrenAndChildData)) = childCount;
             secondChild = xmlNextElementSibling(secondChild);
         }
+        else
+        { 
+            childCount = 0;
+        }
+        pointerMathAdder += childCount * sizeof(uint64_t) + sizeof(uint32_t);
+        *((uint32_t *)(curXmlObjectData->childrenAndChildData)) = childCount;
         if(secondChild != NULL && *(secondChild->name) == 'D')
         {
             *(uint32_t *)(curXmlObjectData->childrenAndChildData + childCount * sizeof(uint64_t) + sizeof(uint32_t)) = xmlChildElementCount(secondChild);
             data = (uint64_t *)(curXmlObjectData->childrenAndChildData + childCount * sizeof(uint64_t) + sizeof(uint32_t) * 2);
+            pointerMathAdder += (*(((uint32_t*)data) - 1) * sizeof(uint64_t)) + sizeof(uint32_t);   
             thirdChild = xmlFirstElementChild(secondChild);
             while(thirdChild != NULL && thirdChild->children != NULL)
             {
@@ -683,7 +694,7 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
                 thirdChild = xmlNextElementSibling(thirdChild);
             }
         }
-        if(pointerMathAdder != 0)
+        if(curXmlObjectData != (xmlObjectData *)parentChildAssociation)
         {//means working in a child, add this child to its parent
         //look at recursive call to understand this
             *((uint64_t *)(parentChildAssociation + sizeof(xmlObjectData) + sizeof(uint32_t) + siblingNum * sizeof(uint64_t))) = (uint64_t)curXmlObjectData;
@@ -695,13 +706,14 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
         child = xmlNextElementSibling(child);
     } 
     if(*(rootNode->name) == 'C')
-    {//done with this xmlobjectdata
+    {//in a child data, meaning that a parent has been completely filled, push pointer forward past parent
         parentChildAssociation += sizeof(xmlObjectData);
         parentChildAssociation += *((uint32_t *)parentChildAssociation) * sizeof(uint64_t) + sizeof(uint32_t);
         parentChildAssociation += *((uint32_t *)parentChildAssociation) * sizeof(uint64_t) + sizeof(uint32_t);
     }
-    while(parentChildAssociation != 0 && *((uint32_t *)(parentChildAssociation + sizeof(xmlObjectData))) == 0)
+    while(parentChildAssociation != 0 && *parentChildAssociation != 0 && *((uint32_t *)(parentChildAssociation + sizeof(xmlObjectData))) == 0)
     {
+        //skip over node with no children
         parentChildAssociation += sizeof(xmlObjectData) + 2 * sizeof(uint32_t) + (*((uint32_t*)(parentChildAssociation + sizeof(xmlObjectData) + sizeof(uint32_t))) * sizeof(uint64_t));
     }
     if(*parentChildAssociation == 0)
@@ -710,26 +722,63 @@ uint32_t startupPass(swcWin *win, xmlNode *rootNode, char *parentChildAssociatio
     }
     else
     {
-        child = xmlNextElementSibling(rootNode);
+        child = xmlFirstElementChild(rootNode);
         while(child != NULL)
         {
-            if(xmlStrEqual(child->name, ((xmlObjectData *)parentChildAssociation)->name))
-                break;
+            secondChild = xmlFirstElementChild(child);
+            if(secondChild != NULL && *secondChild->name == 'N')
+            {
+                if(xmlStrEqual(secondChild->children->content, ((xmlObjectData *)parentChildAssociation)->name))
+                {
+                    secondChild = xmlNextElementSibling(secondChild);
+                    if(secondChild != NULL && *secondChild->name == 'T')
+                    {
+                        secondChild = xmlNextElementSibling(secondChild);
+                    }
+                    if(secondChild != NULL && *secondChild->name == 'C')
+                    {
+                        rootNode = secondChild;
+                        break;
+                    }//else alert error
+                } 
+            }
+            secondChild = xmlNextElementSibling(secondChild);
+            if(secondChild != NULL && *secondChild->name == 'T')
+            {
+                secondChild = xmlNextElementSibling(secondChild);
+            }
+            if(secondChild != NULL && *secondChild->name == 'C')
+            {
+                secondChild = xmlFirstElementChild(secondChild);
+                while(secondChild != NULL)
+                {
+                    thirdChild = xmlFirstElementChild(secondChild);
+                    if(thirdChild != NULL && *thirdChild->name == 'N')
+                    {
+                        if(xmlStrEqual(thirdChild->children->content, ((xmlObjectData *)parentChildAssociation)->name))
+                        {
+                            thirdChild = xmlNextElementSibling(thirdChild);
+                            if(thirdChild != NULL && *thirdChild->name == 'T')
+                            {
+                                thirdChild = xmlNextElementSibling(thirdChild);
+                            }
+                            if(thirdChild != NULL && *thirdChild->name == 'C')
+                            {
+                                rootNode = thirdChild;
+                                break;
+                            }//else alert error
+                        }
+                    }
+                    secondChild = xmlNextElementSibling(secondChild);
+                }
+                if(child == secondChild)
+                {
+                    break;
+                }
+            }
             child = xmlNextElementSibling(child);
         }
-        if(child == NULL)
-        {
-            child = xmlFirstElementChild(rootNode);
-            while(child != NULL)
-            {
-                if(xmlStrEqual(child->name, ((xmlObjectData *)parentChildAssociation)->name))
-                    break;
-                child = xmlNextElementSibling(child);
-            }
-        }
-
-        rootNode = child;
-        return startupPass(win, rootNode, parentChildAssociation);
+        return startupPass(win, rootNode, parentChildAssociation, pointerMathAdder);
     }
     
 }

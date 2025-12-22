@@ -56,10 +56,11 @@ swcWin initWindow(uint32_t* config, uint64_t eventMask, uint32_t posx, uint32_t 
 
     programObjectsXML((swcWin*)retrieveName(windowName, &manager));
     divObjectDefXML((swcWin*)retrieveName(windowName, &manager));
+    startupXML((swcWin*)retrieveName(windowName, &manager));
 
     //increase arena space for some reason???? like i don't know what this why is this here?
-    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
-    addArena(sizeof(swcDiv) * 2000, + sizeof(swcWin), &manager);
+    addArena(sizeof(swcDiv) * 1000, + sizeof(swcWin), &manager);
+    addArena(sizeof(swcDiv) * 1000, + sizeof(swcWin), &manager);
 
     //intialize all arrayName things
     initProgramGroups(((swcWin*)retrieveName(windowName, &manager)), InitialProgramSize, (layerCount == 0 ? DefaultLayerCount : layerCount)); 

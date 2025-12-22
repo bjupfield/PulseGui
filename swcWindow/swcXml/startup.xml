@@ -2,10 +2,10 @@
 <?xml-model href="schema.xsd" type="application/xml"?>
 <InstDivs>
     <InstDiv>
-        <Name></Name>
+        <Name>Hello</Name>
         <Children>
             <InstDiv>
-                <Name></Name>
+                <Name>World</Name>
                 <Transform>
                     <PosX>0</PosX>
                     <PosY>0</PosY>
@@ -14,7 +14,10 @@
                     <ScaleY>1</ScaleY>
                     <ScaleZ>1</ScaleZ>
                 </Transform>
-                <Data></Data>
+                <Data>
+                    <int64_t>32</int64_t>
+                    <string>Hello World</string>
+                </Data>
             </InstDiv>
         </Children>
         <Data></Data>
